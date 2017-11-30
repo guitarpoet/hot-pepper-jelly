@@ -1,0 +1,30 @@
+{
+    "name": "hot-pepper-jelly",
+    "version": "1.0.0",
+    "description": "The es6 based hot reload support.",
+    "main": "index.js",
+    "scripts": {
+        "test": "jasmine tests/function_test.js"
+    },
+    "repository": {
+        "type": "git",
+        "url": "git+ssh://git@github.com/guitarpoet/hot-pepper-jelly.git"
+    },
+    "keywords": [
+        "node",
+        "hot-reload"
+    ],
+    "author": "Jack <jack@thinkingcloud.info>",
+    "license": "Apache-2.0",
+    "bugs": {
+        "url": "https://github.com/guitarpoet/hot-pepper-jelly/issues"
+    },
+    "homepage": "https://github.com/guitarpoet/hot-pepper-jelly#readme",
+    "devDependencies": {
+        "jasmine": "^2.8.0"
+    },
+    "dependencies": {
+        "handlebars": "^4.0.11",
+        "underscore": "^1.8.3"
+    }
+}

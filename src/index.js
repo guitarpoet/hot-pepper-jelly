@@ -43,6 +43,16 @@ const template = (template, context = {}) => {
     return t(context);
 }
 
+const getCaller = () => {
+    let { stack } = new Error();
+    stack = stack.split("\n");
+
+    if(stack.length > 1) {
+        return parseTrace(stack[3]);
+    }
+    return {};
+}
+
 const parseTrace = (msg) => {
     if(msg) {
         let data = msg.trim().match(TRACE_REGEX);
@@ -221,7 +231,7 @@ const proxy = (path, value = null) => {
     return value;
 }
 
-const loaded = (path, value = null) => {
+const loaded = (path, value = null, caller = null) => {
     let r = registry("modules");
     if(path) {
         if(value) {
@@ -246,14 +256,18 @@ const _require = require;
  * Reload the
  */
 const reload = (path) => {
+    // The absolute path of this required module
+    let realPath = resolvePath(path, getCaller().file);
+
+    if(!realPath) {
+        return false;
+    }
     // Since we want to reload, let's purge the load cache first
-    purgeCache(path);
+    purgeCache(realPath);
     // Using nodejs's loader to load it again
-    let l = _require(path);
+    let l = _require(realPath);
 
     if(l) {
-        // The absolute path of this required module
-        let realPath = _require.resolve(path);
 
         // Create the return proxy
         let ret = new Proxy(l, new ProxyHandler(realPath));
@@ -422,13 +436,38 @@ const searchCache = (moduleName, callback) => {
     }
 };
 
+const resolvePath = (p, caller = null) => {
+    // Let's try the path first
+    try {
+        let ret = _require.resolve(p);
+        if(ret) {
+            return ret;
+        }
+    }
+    catch(ex) {
+        // We can't resolve it, let's check if the caller exists
+        if(caller && isString(caller)) {
+            let ret = _require.resolve(path.join(path.dirname(caller), p));
+            if(ret) {
+                return ret;
+            }
+        }
+    }
+    return false;
+}
+
 /**
  * Load the module using the hot reload way
  */
-const load = extend((path) => {
-    debug(`Trying to load module at path ${path}`);
+const load = (path) => {
+    let caller = getCaller().file;
+    debug(`Trying to load module at path ${path} for caller ${caller}`);
 
-    let realPath = require.resolve(path);
+    let realPath = resolvePath(path, getCaller().file);
+    if(!realPath) {
+        debug("Can't find path to load {{path}}", {path});
+        return false;
+    }
 
     let l = proxy(realPath);
 
@@ -437,7 +476,7 @@ const load = extend((path) => {
         return l;
     }
     return reload(path);
-}, _require);
+};
 
 const watcher = () => {
     let w = global_registry("watcher");
@@ -489,5 +528,5 @@ const watch_and_reload = (files = [], callback = null, async = true) => {
 }
 
 module.exports = {
-    cache, loaded, reload, fileExists, load, debug, log, registry, watcher, start_watch, end_watch, global_registry, watch_and_reload
+    cache, loaded, reload, fileExists, load, debug, log, registry, watcher, start_watch, end_watch, global_registry, watch_and_reload, getCaller, resolvePath
 }

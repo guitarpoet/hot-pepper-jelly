@@ -1,5 +1,5 @@
 const { load, reload, start_watch, watch_and_reload, debug } = require("../src/index");
-const test = load(`${__dirname}/sample.js`);
+const test = load("./sample");
 
 console.info(test);
 setInterval(() => {

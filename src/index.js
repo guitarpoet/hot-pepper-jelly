@@ -13,7 +13,7 @@ const { keys, isFunction, extend, isString } = require("underscore");
 const handlebars = require("handlebars");
 const Watcher = require("./watcher");
 
-const TRACE_REGEX = /^at ([._a-zA-Z]+) \(([^:]+):([0-9]+):([0-9]+)\)$/;
+const TRACE_REGEX = /^at ([<>._a-zA-Z]+) \(([^:]+):([0-9]+):([0-9]+)\)$/;
 
 const templateExists = (name) => {
     return fileExists(`templates/${name}.tpl`);
@@ -255,9 +255,9 @@ const _require = require;
 /**
  * Reload the
  */
-const reload = (path) => {
+const reload = (path, caller = null) => {
     // The absolute path of this required module
-    let realPath = resolvePath(path, getCaller().file);
+    let realPath = resolvePath(path, caller);
 
     if(!realPath) {
         return false;
@@ -463,7 +463,7 @@ const load = (path) => {
     let caller = getCaller().file;
     debug(`Trying to load module at path ${path} for caller ${caller}`);
 
-    let realPath = resolvePath(path, getCaller().file);
+    let realPath = resolvePath(path, caller);
     if(!realPath) {
         debug("Can't find path to load {{path}}", {path});
         return false;
@@ -475,7 +475,7 @@ const load = (path) => {
         debug(`Returning the loaded registry for ${path}`);
         return l;
     }
-    return reload(path);
+    return reload(realPath);
 };
 
 const watcher = () => {

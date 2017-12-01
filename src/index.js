@@ -364,7 +364,11 @@ class ProxyHandler {
         let obj = this.getObj();
         if(obj) {
             debug(`Trying to call the proxied function in module ${this.path}`);
-            obj.call(thisArg, argumentsList);
+            if(thisArg) {
+                obj.call(thisArg, argumentsList);
+            } else {
+                obj.call(obj, argumentsList);
+            }
         }
         return null;
     }

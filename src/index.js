@@ -72,7 +72,7 @@ const parseTrace = (msg) => {
     return null;
 }
 
-const log = (msg, context = {}, level = "INFO", sink = "default", tag = null) => {
+const log = (msg, context = {}, level = "INFO", tag = null, sink = "default") => {
     let { stack } = new Error();
     stack = stack.split("\n");
 

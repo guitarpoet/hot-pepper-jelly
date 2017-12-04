@@ -484,12 +484,6 @@ const resolvePath = (p, caller = null) => {
  * Load the module using the hot reload way
  */
 const load = (path, reload = false) => {
-    let features = global_registry("features");
-    if(!features || !features.hotload) {
-        // If we don't ahve the hotload feature enabled, let's just require it
-        return require(path);
-    }
-
     let caller = getCaller().file;
     debug(`Trying to load module at path ${path} for caller ${caller}`);
 
@@ -497,6 +491,12 @@ const load = (path, reload = false) => {
     if(!realPath) {
         debug("Can't find path to load {{path}}", {path});
         return false;
+    }
+
+    let features = global_registry("features");
+    if(!features || !features.hotload) {
+        // If we don't ahve the hotload feature enabled, let's just require it
+        return require(realPath);
     }
 
     let l = proxy(realPath);

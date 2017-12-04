@@ -48,7 +48,12 @@ const getCaller = () => {
     stack = stack.split("\n");
 
     if(stack.length > 1) {
-        return parseTrace(stack[3]);
+        let caller = parseTrace(stack[3]);
+        if(caller.file == __filename) {
+            // We are calling from ourselves
+            caller = parseTrace(stack[4]);
+        }
+        return caller;
     }
     return {};
 }
@@ -67,9 +72,11 @@ const parseTrace = (msg) => {
     return null;
 }
 
-const log = (msg, context = {}, level = "INFO", tag = null) => {
+const log = (msg, context = {}, level = "INFO", sink = "default", tag = null) => {
     let { stack } = new Error();
     stack = stack.split("\n");
+
+    let theSink = safeGet(global_registry("sinks"), sink, console.log);
 
     let data = parseTrace(stack[2]);
     if(data) {
@@ -80,16 +87,16 @@ const log = (msg, context = {}, level = "INFO", tag = null) => {
         if(data) {
             data.level = level;
 
-            let prefix = template("{{level}}: [{{func}}]:{{line}} - ", data);
+            let prefix = template("[{{func}}]:{{line}} - ", data);
             if(tag) {
-                console.log(prefix + template(msg, context), tag);
+                theSink(prefix + template(msg, context), level, tag);
             } else {
-                console.log(prefix + template(msg, context));
+                theSink(prefix + template(msg, context), level);
             }
         }
     } else {
         // We can't get the line numbers, let's fallback
-        console.log(level + ": " + template(msg, context), tag);
+        theSink(template(msg, context), level, tag);
     }
 }
 
@@ -232,6 +239,11 @@ const proxy = (path, value = null) => {
 }
 
 const loaded = (path, value = null, caller = null) => {
+    let features = global_registry("features");
+    if(!features || !features.hotload) {
+        // If the hotload feature is not enabled, let's just try find it in nodejs's cache
+        return searchCacheSync(path);
+    }
     let r = registry("modules");
     if(path) {
         if(value) {
@@ -255,7 +267,7 @@ const _require = require;
 /**
  * Reload the
  */
-const reload = (path, caller = null) => {
+const _reload = (path, caller = null) => {
     // The absolute path of this required module
     let realPath = resolvePath(path, caller);
 
@@ -440,6 +452,14 @@ const searchCache = (moduleName, callback) => {
     }
 };
 
+const searchCacheSync = (moduleName) => {
+    let mod = _require.resolve(moduleName);
+    if (mod && ((mod = _require.cache[mod]) !== undefined)) {
+        return mod;
+    }
+    return false;
+}
+
 const resolvePath = (p, caller = null) => {
     // Let's try the path first
     try {
@@ -463,7 +483,13 @@ const resolvePath = (p, caller = null) => {
 /**
  * Load the module using the hot reload way
  */
-const load = (path) => {
+const load = (path, reload = false) => {
+    let features = global_registry("features");
+    if(!features || !features.hotload) {
+        // If we don't ahve the hotload feature enabled, let's just require it
+        return require(path);
+    }
+
     let caller = getCaller().file;
     debug(`Trying to load module at path ${path} for caller ${caller}`);
 
@@ -475,12 +501,16 @@ const load = (path) => {
 
     let l = proxy(realPath);
 
-    if(l) {
+    if(l && !reload) {
         debug(`Returning the loaded registry for ${path}`);
         return l;
     }
-    return reload(realPath);
+    return _reload(realPath);
 };
+
+const reload = (path) => {
+    return load(path, true);
+}
 
 const watcher = () => {
     let w = global_registry("watcher");
@@ -523,7 +553,7 @@ const watch_and_reload = (files = [], callback = null, async = true) => {
             // Only check for js and json
             debug("Reloading file {{file_path}}", {file_path});
             // Reload the sample anytime any file is changed
-            let m = reload(file_path);
+            let m = _reload(file_path);
             if(callback && isFunction(callback)) {
                 callback(m, file_path, type);
             }
@@ -531,6 +561,18 @@ const watch_and_reload = (files = [], callback = null, async = true) => {
     }, async);
 }
 
+const enable_features = (features = {}) => {
+    let f = global_registry("features") || {};
+    global_registry("features", extend(features, f));
+}
+
+/**
+ * Enable the hot load into the global features
+ */
+const enable_hotload = () => {
+    enable_features({hotload: true});
+}
+
 module.exports = {
-    cache, loaded, reload, fileExists, load, debug, log, registry, watcher, start_watch, end_watch, global_registry, watch_and_reload, getCaller, resolvePath
+    cache, loaded, reload, fileExists, load, debug, log, registry, watcher, start_watch, end_watch, global_registry, watch_and_reload, getCaller, resolvePath, enable_hotload, enable_features
 }

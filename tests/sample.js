@@ -4,7 +4,6 @@ class Hello {
 	}
 }
 
-
 module.exports =  {
 	date: new Date(),
 	Hello

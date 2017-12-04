@@ -4,7 +4,7 @@
     "description": "The es6 based hot reload support.",
     "main": "src/index.js",
     "scripts": {
-        "test": "jasmine tests/function_test.js"
+        "test": "NODEPATH=.:src:tests jasmine tests/function_test.js"
     },
     "repository": {
         "type": "git",

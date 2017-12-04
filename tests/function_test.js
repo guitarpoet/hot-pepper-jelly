@@ -1,5 +1,7 @@
-const { cache, reload, load, loaded, watcher, resolvePath, getCaller } = require("../src/index");
+const { cache, reload, load, loaded, watcher, resolvePath, getCaller, enable_hotload } = require("../src/index");
 const path = require("path");
+
+enable_hotload();
 
 describe("Core Function Test", () => {
 	it("registry test", () => {
@@ -8,14 +10,13 @@ describe("Core Function Test", () => {
 	});
 
 	it("reload test", () => {
-		let t = reload("./sample");
+		let t = load("./sample");
 		let h = new t.Hello();
 		h.world();
 		expect(new t.Hello().world()).toEqual("world");
 		let time = t.date;
 		reload("./sample");
 		expect(time == t.date).toBeFalsy();
-
 		t = reload("./sample");
 		expect(new t.Hello().world()).toEqual("world");
 	});

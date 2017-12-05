@@ -6,7 +6,7 @@
  * @date Thu Nov 30 11:28:41 2017
  */
 
-const { safeGet, propGet, getFileContentsSync, getFileContents, fileExists } = require("./functions");
+const { safeGet, propGet, getFileContentsSync, getFileContents } = require("./functions");
 const path = require("path");
 const fs = require("fs");
 const { keys, isFunction, extend, isString, isArray } = require("underscore");
@@ -15,30 +15,86 @@ const Watcher = require("./watcher");
 
 const TRACE_REGEX = /^at ([<>._a-zA-Z]+) \(([^:]+):([0-9]+):([0-9]+)\)$/;
 
-const templateExists = (name) => {
-    return fileExists(`templates/${name}.tpl`);
-}
-
 const errput = (err) => {
     log(err, {}, "ERROR");
 }
 
-const template = (template, context = {}) => {
-    let t = handlebarTemplate(template);
-    if(!t) {
-        // Let's check if it is the file in the template path
-        let filePath = path.join(__dirname, "templates", template + ".tpl");
-        // Use the contents of the template file
-        let temp = getFileContentsSync(filePath);
-        if(!temp) {
-            // If no content, will use the template key as the template itself
-            temp = template;
-        } else {
-            temp = temp.toString("utf-8");
+const appendIfNotExists = (i, arr) => {
+    if(isArray(arr) && arr.indexOf(i) === -1) {
+        arr.push(i);
+        return arr;
+    }
+    return false;
+}
+
+/**
+ * Resolve the templates
+ */
+const resolveTemplate = (template) => {
+    // The template paths registry, will store all template paths we have resolved
+    let templatePathReg = registry("template_paths");
+
+    if(feature_enabled("template_file")) {
+        // Check if the template path registry is already there and valid
+        let p = templatePathReg.get(template);
+        if(p) {
+            if(fs.existsSync(p)) {
+                // This is the file, and it exists, let's get the contents of it
+                return getFileContentsSync(p);
+            } else {
+                // This is just a stored string, let's return it
+                return p;
+            }
         }
 
-        t = handlebars.compile(temp);
-        handlebarTemplate(template, t);
+        // It is not in the registry, let's find it
+        let templatePath = global_registry("template_path") || [];
+
+        // Will add current dir, templates, and node_module path to the template path automaticly
+        appendIfNotExists(process.cwd(), templatePath);
+        appendIfNotExists(path.join(process.cwd(), "templates"), templatePath);
+        appendIfNotExists(path.join(process.cwd(), "node_modules"), templatePath);
+
+        if(feature_enabled("node_template_file")) {
+            // If search the template file in node path is enabled
+            let nodePath = process.env.NODE_PATH || "";
+            // Add each node path into the template paths
+            nodePath.split(path.delimiter).map(p => appendIfNotExists(p, templatePath));
+        }
+
+        let extension = global_registry("template_ext") || ".hbs";
+        let fileName = template;
+        // Then, let's resolve the template file
+        if(!fileName.endsWith(extension)) {
+            // Let's add the file extension automaticly
+            fileName = fileName + extension;
+        }
+
+        for(let p of templatePath) {
+            let filePath = path.join(p, fileName);
+            if(fs.existsSync(filePath)) {
+                // Found, let's put the path of it into the registry
+                templatePathReg.set(template, filePath);
+                // Let's get the contents of it
+                return getFileContentsSync(filePath);
+            }
+        }
+    }
+
+    // No template file found, will treat the template string itself as template, add it into the registry
+    templatePathReg.set(template, template);
+    // Return it
+    return template;
+}
+
+const template = (template, context = {}, cache = true) => {
+    let t = cache? handlebarTemplate(template): null;
+    if(!t) {
+        // Let's resolve and compile the template
+        t = handlebars.compile(resolveTemplate(template));
+
+        // Cache the template if needed;
+        cache && handlebarTemplate(template, t);
     }
     return t(context);
 }
@@ -638,6 +694,6 @@ const chain = (callback = null) => {
 }
 
 module.exports = {
-    cache, loaded, reload, fileExists, load, debug, log, registry, watcher, start_watch, end_watch, global_registry, watch_and_reload, getCaller, resolvePath, enable_hotload, enable_features, template,
-    enabled_features, feature_enabled, chain
+    cache, loaded, reload, load, debug, log, registry, watcher, start_watch, end_watch, global_registry, watch_and_reload, getCaller, resolvePath, enable_hotload, enable_features, template,
+    enabled_features, feature_enabled, chain, handlebarTemplate
 }

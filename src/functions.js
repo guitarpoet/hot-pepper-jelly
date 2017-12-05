@@ -7,6 +7,7 @@
  */
 
 const fs = require("fs");
+const path = require("path");
 
 const safeGet = (obj, name, defaultValue = null) => {
     if(obj && name) {
@@ -36,20 +37,13 @@ const propGet = (obj, property, defaultValue = null) => {
     return defaultValue;
 }
 
-const fileExists = (file, basePath = null) => {
-	// Setting up the base path
-	return fs.existsSync(path.join(file,
-		basePath || path.resolve(path.join(__dirname, ".."))
-	));
-}
-
 const getFileContents = (path) => {
 	return new Promise((resolve, reject) => {
 		fs.access(path, fs.constants.R_OK | fs.constants.W_OK, (err) => {
 			if(err) {
 				reject(`Error: Reading file ${path} -> ${err}`);
 			} else {
-				fs.readFile(path, (err, data) => {
+				fs.readFile(path, "utf-8", (err, data) => {
 					if(err) {
 						reject(`Error: Reading file ${module} -> ${err}`);
 					} else {
@@ -63,12 +57,12 @@ const getFileContents = (path) => {
 
 const getFileContentsSync = (path) => {
 	if(fs.existsSync(path)) {
-		return fs.readFileSync(path);
+		return fs.readFileSync(path, "utf-8");
 	}
 	return false;
 }
 
 
 module.exports = {
-	safeGet, propGet, fileExists, getFileContentsSync, getFileContents
+	safeGet, propGet, getFileContentsSync, getFileContents
 }

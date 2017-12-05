@@ -1,7 +1,13 @@
-const { cache, reload, load, loaded, watcher, resolvePath, getCaller, enable_hotload, enabled_features , feature_enabled, chain} = require("../src/index");
+const { global_registry, cache, reload, load, loaded, watcher, resolvePath, getCaller, enable_hotload, enable_features, enabled_features , feature_enabled, chain, template, handlebarTemplate} = require("../src/index");
 const path = require("path");
 
-enable_hotload();
+enable_features( {
+    hotload: true, // Enable the hot load
+    template_file: true // Enable the template file
+});
+
+// Add the templates directory of tests into the template path search
+global_registry("template_path", [ path.join(__dirname, "templates")]);
 
 describe("Core Function Test", () => {
     it("hot load feature enable test", () => {
@@ -55,4 +61,18 @@ describe("Core Function Test", () => {
         expect(watcher()).toBeTruthy();
     });
 
+    it("template test", () => {
+        let tt = "Hello {{name}}";
+        let name = "World";
+        expect(template(tt, {name})).toEqual("Hello World");
+        expect(handlebarTemplate(tt)).toBeTruthy();
+    });
+
+    it("template file test", () => {
+        let tt = "Hello {{name}}";
+        let name = "World";
+        expect(template(tt, {name})).toEqual("Hello World");
+        expect(template("hello", {name}).trim()).toEqual("Hello World");
+        expect(handlebarTemplate(tt)).toBeTruthy();
+    });
 });

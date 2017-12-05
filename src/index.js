@@ -9,7 +9,7 @@
 const { safeGet, propGet, getFileContentsSync, getFileContents, fileExists } = require("./functions");
 const path = require("path");
 const fs = require("fs");
-const { keys, isFunction, extend, isString } = require("underscore");
+const { keys, isFunction, extend, isString, isArray } = require("underscore");
 const handlebars = require("handlebars");
 const Watcher = require("./watcher");
 
@@ -239,8 +239,7 @@ const proxy = (path, value = null) => {
 }
 
 const loaded = (path, value = null, caller = null) => {
-    let features = global_registry("features");
-    if(!features || !features.hotload) {
+    if(!feature_enabled("hotload")) {
         // If the hotload feature is not enabled, let's just try find it in nodejs's cache
         return searchCacheSync(path);
     }
@@ -493,8 +492,7 @@ const load = (path, reload = false) => {
         return false;
     }
 
-    let features = global_registry("features");
-    if(!features || !features.hotload) {
+    if(!feature_enabled("hotload")) {
         // If we don't ahve the hotload feature enabled, let's just require it
         return require(realPath);
     }
@@ -561,9 +559,25 @@ const watch_and_reload = (files = [], callback = null, async = true) => {
     }, async);
 }
 
+/**
+ * Enable the features using the hash
+ */
 const enable_features = (features = {}) => {
-    let f = global_registry("features") || {};
-    global_registry("features", extend(features, f));
+    global_registry("features", extend(features, enabled_features()));
+}
+
+/**
+ * Get the global enabled features
+ */
+const enabled_features = () => {
+    return global_registry("features") || {};
+}
+
+/**
+ * Check if the feature is enabled
+ */
+const feature_enabled = (feature) => {
+    return !!feature && !!enabled_features()[feature];
 }
 
 /**
@@ -573,6 +587,57 @@ const enable_hotload = () => {
     enable_features({hotload: true});
 }
 
+/**
+ * Wrapper for Promise to add the Chain support functions
+ */
+class MyPromise extends Promise {
+    constructor(callback) {
+        super(callback);
+    }
+
+    chain(callback) {
+        return this.then(chain(callback));
+    }
+}
+
+/**
+ * The syntax sugar to make the chain easier
+ */
+const chain = (callback = null) => {
+    let ret = function() {
+        let args = Array.from(arguments);
+
+        // The callback is an array
+        if(isArray(callback)) {
+            let c = callback.shift();
+            // Start the chain
+            let cc = chain(c)(args);
+
+            while(callback.length) {
+                c = callback.shift();
+                cc = cc.then(chain(c));
+            }
+            return cc;
+        }
+
+        return new MyPromise((resolve, reject) => {
+            if(isFunction(callback)) {
+                resolve(callback.apply(null, args)); // Call the callback function
+            } else {
+                resolve(args);
+            }
+        });
+    }
+
+    if(isFunction(callback) || isArray(callback)) {
+        return ret;
+    } else {
+        // Let's treat chain as a starter
+        return ret(callback);
+    }
+}
+
 module.exports = {
-    cache, loaded, reload, fileExists, load, debug, log, registry, watcher, start_watch, end_watch, global_registry, watch_and_reload, getCaller, resolvePath, enable_hotload, enable_features, template
+    cache, loaded, reload, fileExists, load, debug, log, registry, watcher, start_watch, end_watch, global_registry, watch_and_reload, getCaller, resolvePath, enable_hotload, enable_features, template,
+    enabled_features, feature_enabled, chain
 }

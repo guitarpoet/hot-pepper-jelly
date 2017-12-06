@@ -9,12 +9,13 @@
 const { watch_and_reload } = require("../../src/index");
 
 module.exports = (app) => {
+    return new Promise((resolve, reject) => {
+        // Let's watch all file change in current folder, and reload them into NodeJS
+        watch_and_reload([__dirname]);
 
-    // Let's watch all file change in current folder, and reload them into NodeJS
-    watch_and_reload([__dirname]);
-
-    app.listen(8080, () => {
-        console.log("Started....");
+        app.listen(8080, () => {
+            resolve(app);
+        });
     });
 }
 

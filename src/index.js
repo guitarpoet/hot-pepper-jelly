@@ -667,7 +667,7 @@ const chain = (callback = null) => {
         if(isArray(callback)) {
             let c = callback.shift();
             // Start the chain
-            let cc = chain(c)(args);
+            let cc = chain(c).apply(null, args);
 
             while(callback.length) {
                 c = callback.shift();
@@ -678,7 +678,13 @@ const chain = (callback = null) => {
 
         return new MyPromise((resolve, reject) => {
             if(isFunction(callback)) {
-                resolve(callback.apply(null, args)); // Call the callback function
+                let result = callback.apply(null, args);
+                if(result instanceof Promise) {
+                    // If the callback returns a promise, let's call the promise
+                    return result.then(resolve);
+                } else {
+                    resolve(result); // Call the callback function
+                }
             } else {
                 resolve(args);
             }

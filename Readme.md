@@ -23,35 +23,39 @@ What you can only do now is make it watch your code change, and restart it again
 
 Then, how can we get this fixed? Let's face the code first, say, we have a small express server running using the code like this:
 
-		// index.js
-		const express = require("express");
-		const init = require("./initializer.js");
-		const router = require("./router");
-		const run = require("./starter");
+```javascript
 
-		const error_report = console.error;
-		const setup_router = (app) => {
-			return new Promise((resolve, reject) => {
-				app.use("/", router);
-				resolve(app);
-			});
-		}
+    // index.js
+    const express = require("express");
+    const init = require("./initializer.js");
+    const router = require("./router");
+    const run = require("./starter");
 
-		init(express())
-			.then(setup_router)
-			.then(run)
-			.catch(error_report);
+    const error_report = console.error;
+    const setup_router = (app) => {
+        return new Promise((resolve, reject) => {
+            app.use("/", router);
+            resolve(app);
+        });
+    }
 
-		// router.js
-		const { Router } = require('express');
+    init(express())
+        .then(setup_router)
+        .then(run)
+        .catch(error_report);
 
-		const router = new Router();
+    // router.js
+    const { Router } = require('express');
 
-		router.get("/", (req, res) => {
-			res.send("Hello world");
-		});
+    const router = new Router();
 
-		module.exports = router;
+    router.get("/", (req, res) => {
+        res.send("Hello world");
+    });
+
+    module.exports = router;
+
+```
 
 After the server is running, how can you update the router file and reload it?
 
@@ -79,39 +83,39 @@ By using this way, you won't need restart anything(or even rewrite much of your 
 
 The code is like this:
 
+```javascript
 
-		// The index.js
-		const express = require("express");
-		const { global_registry, enable_hotload, load } = require("hot-pepper-jelly");
-		const init = require("./initializer.js");
-		const run = require("./starter");
-		const path = require("path");
+    // The index.js
+    const express = require("express");
+    const { enable_hotload, load, chain } = require("hot-pepper-jelly");
+    const init = require("./initializer.js");
+    const run = require("./starter");
+    const path = require("path");
 
-		enable_hotload(); // Let's enable the hot reload feature
+    enable_hotload(); // Let's enable the hot reload feature
 
-		const error_report = console.error;
-		const setup_router = (app) => {
-			return new Promise((resolve, reject) => {
-				app.use("/", load("./router"));
-				resolve(app);
-			});
-		}
+    const error_report = console.error;
 
-		init(express())
-			.then(setup_router)
-			.then(run)
-			.catch(error_report);
+    const setup_router = (app) => {
+        app.use("/", load("./router"));
+        return app;
+    }
 
-		// The starter.js
-		const { watch_and_reload } = require("hot-pepper-jelly");
+    chain([ init, setup_router, run ])(express()).
+        then(() => console.info("Done")).catch(error_report);
 
-		module.exports = (app) => {
+    // The starter.js
+    const { watch_and_reload } = require("../../src/index");
 
-			// Let's watch all file change in current folder, and reload them into NodeJS
-			watch_and_reload([__dirname]);
+    module.exports = (app) => {
+        return new Promise((resolve, reject) => {
+            // Let's watch all file change in current folder, and reload them into NodeJS
+            watch_and_reload([__dirname]);
 
-			app.listen(8080, () => {
-				console.log("Started....");
-			});
-		}
+            app.listen(8080, () => {
+                resolve(app);
+            });
+        });
+    }
 
+```

@@ -9,8 +9,7 @@
 const { global_registry } = require("../../src/index");
 
 module.exports = (app) => {
-    return new Promise((resolve, reject) => {
-        global_registry("app", app);
-        resolve(app);
-    });
+    // Add the app into the global registry to global access
+    global_registry("app", app);
+    return app;
 }

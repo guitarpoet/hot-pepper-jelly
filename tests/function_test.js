@@ -46,6 +46,15 @@ describe("Core Function Test", () => {
 
         chain("World").chain(name => "Hello " + name)
             .then(name => expect(name).toEqual("Hello World"));
+
+        chain("World").chain([
+            (name => {
+                return new Promise((resolve, reject) => {
+                    resolve("Hello " + name);
+                });
+            }),
+            (name => name + " Third Time")])
+            .then(name => expect(name).toEqual("Hello World Third Time"));
     });
 
     it("load test", () => {

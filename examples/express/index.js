@@ -7,7 +7,7 @@
  */
 
 const express = require("express");
-const { global_registry, enable_hotload, load } = require("../../src/index");
+const { enable_hotload, load, chain } = require("../../src/index");
 const init = require("./initializer.js");
 const run = require("./starter");
 const path = require("path");
@@ -16,13 +16,9 @@ enable_hotload(); // Let's enable the hot reload feature
 
 const error_report = console.error;
 const setup_router = (app) => {
-    return new Promise((resolve, reject) => {
-        app.use("/", load("./router"));
-        resolve(app);
-    });
+    app.use("/", load("./router"));
+    return app;
 }
 
-init(express())
-    .then(setup_router)
-    .then(run)
-    .catch(error_report);
+chain([ init, setup_router, run ])(express()).
+    then(() => console.info("Done")).catch(error_report);

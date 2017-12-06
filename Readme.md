@@ -105,7 +105,7 @@ The code is like this:
         then(() => console.info("Done")).catch(error_report);
 
     // The starter.js
-    const { watch_and_reload } = require("../../src/index");
+    const { watch_and_reload } = require("hot-pepper-jelly");
 
     module.exports = (app) => {
         return new Promise((resolve, reject) => {

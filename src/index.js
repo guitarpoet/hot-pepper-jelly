@@ -699,7 +699,14 @@ const chain = (callback = null) => {
     }
 }
 
+function pipe(obj) {
+    let args = Array.from(arguments);
+    return function() {
+        return chain(Array.from(arguments)).apply(null, args);
+    }
+}
+
 module.exports = {
     cache, loaded, reload, load, debug, log, registry, watcher, start_watch, end_watch, global_registry, watch_and_reload, getCaller, resolvePath, enable_hotload, enable_features, template,
-    enabled_features, feature_enabled, chain, handlebarTemplate
+    enabled_features, feature_enabled, chain, handlebarTemplate, pipe
 }

@@ -7,7 +7,7 @@
  */
 
 const express = require("express");
-const { enable_hotload, load, chain } = require("../../src/index");
+const { enable_hotload, load, pipe } = require("../../src/index");
 const init = require("./initializer.js");
 const run = require("./starter");
 const path = require("path");
@@ -20,5 +20,5 @@ const setup_router = (app) => {
     return app;
 }
 
-chain([ init, setup_router, run ])(express()).
-    then(() => console.info("Done")).catch(error_report);
+pipe(express())(init, setup_router, run).
+    then((app) => console.info("Done")).catch(error_report);

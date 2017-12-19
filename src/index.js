@@ -9,7 +9,7 @@
 const { safeGet, propGet, getFileContentsSync, getFileContents } = require("./functions");
 const path = require("path");
 const fs = require("fs");
-const { keys, isFunction, extend, isString, isArray } = require("underscore");
+const { keys, isDate, isNumber, isFunction, extend, isString, isArray, isSymbol } = require("lodash");
 const handlebars = require("handlebars");
 const Watcher = require("./watcher");
 
@@ -354,12 +354,15 @@ const _reload = (path, caller = null) => {
  * registry
  */
 class ProxyHandler {
-    constructor(path) {
+    constructor(path, prop = null) {
         this.path = path;
+        this.prop = prop;
     }
 
     getObj() {
-        return loaded(this.path);
+        let obj = loaded(this.path);
+        // Return the object if we don't support the property, but if we do have the property, we should return the property of this object instead
+        return this.prop? obj[this.prop]: obj;
     }
 
     getPrototypeOf(target) {
@@ -415,7 +418,25 @@ class ProxyHandler {
     get(target, prop, receiver) {
         let obj = this.getObj();
         if(obj && prop) {
-            return safeGet(obj, prop);
+            let ret = safeGet(obj, prop);
+            if(!this.prop) {
+                if(!ret || isDate(ret) || isString(ret) || isNumber(ret) || isSymbol(prop)) {
+                    // We don't need to proxy string and numbers and dates, and the symbol properties
+                    return ret;
+                }
+                // If this is the root proxy, let's check if we do have the second proxy
+                let p = "__proxy__" + prop;
+                let tmp = safeGet(obj, p);
+                if(!tmp) {
+                    // We don't have the second proxy, let's create it
+                    tmp = new Proxy(ret, new ProxyHandler(this.path, prop));
+                    // Set the second proxy into the object
+                    obj[p] = tmp;
+                }
+                // Let's return the second proxy
+                ret = tmp;
+            }
+            return ret;
         }
         return null;
     }
@@ -424,6 +445,10 @@ class ProxyHandler {
         let obj = this.getObj();
         if(obj) {
             obj[property] = value;
+            if(!this.prop) {
+                // If this is the root object, remove the second level proxy of this property, to refresh it.
+                delete obj["__proxy__" + property];
+            }
         }
     }
 
@@ -450,15 +475,47 @@ class ProxyHandler {
     ownKeys (target)  {
         let obj = this.getObj();
         if(obj) {
-            return keys(obj);
+            let ret = keys(obj).filter((name) => !name.match(/__proxy__.*/));
+            // Add prototype since this is a proxy
+            ret.push("prototype");
+            return ret;
         }
         return [];
+    }
+
+    getPrototype() {
+        if(!this._proto) {
+            this._proto = new Proxy(this.getObj(), {
+                has: (target, prop) => {
+                    let obj = this.getObj().prototype;
+                    if(obj) {
+                        return prop in obj;
+                    }
+                },
+
+                getOwnPropertyDescriptor: (target, prop) => {
+                    let obj = this.getObj().prototype;
+                    if(obj) {
+                        return Object.getOwnPropertyDescriptor(obj, prop);
+                    }
+                },
+
+                get: (target, prop, receiver) => {
+                    let obj = this.getObj().prototype;
+                    return safeGet(obj, prop);
+                }
+            });
+        }
+        return this._proto;
     }
 
     construct (target, argumentsList, newTarget) {
         let obj = this.getObj();
         if(obj) {
-            return new obj();
+            let ret = new obj();
+            // Update the prototype of the return object to be this
+            ret.__proto__ = this.getPrototype();
+            return ret;
         }
         return null;
     }

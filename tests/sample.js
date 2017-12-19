@@ -1,10 +1,17 @@
+class Test {
+    hello() {
+        return "Hello";
+    }
+}
 class Hello {
+    constructor() {
+    }
+
 	world() {
 		return "world";
 	}
 }
 
-module.exports =  {
-	date: new Date(),
-	Hello
-}
+Test.date = new Date();
+Test.Hello = Hello;
+module.exports = Test; 

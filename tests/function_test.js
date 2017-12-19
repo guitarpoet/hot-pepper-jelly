@@ -21,9 +21,15 @@ describe("Core Function Test", () => {
 
     it("load node path test", () => {
         let t = load("sample");
-        console.info(t);
+        console.info(t, t.Hello, t.date);
         expect(t).toBeTruthy();
         expect(new t.Hello().world()).toEqual("world");
+    });
+
+    it("second level proxy test", () => {
+        let { Hello } = load("sample");
+        expect(Hello).toBeTruthy();
+        expect(new Hello().world()).toEqual("world");
     });
 
     it("reload test", () => {

@@ -8,7 +8,7 @@
 
 const fs = require("fs");
 const path = require("path");
-const { isFunction, isArray } = require("underscore");
+const { isFunction, isArray } = require("lodash");
 
 /**
  * The watcher will watch folder and file's change

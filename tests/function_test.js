@@ -19,6 +19,13 @@ describe("Core Function Test", () => {
         expect(cache("name")).toEqual("Jack");
     });
 
+    it("load node path test", () => {
+        let t = load("sample");
+        console.info(t);
+        expect(t).toBeTruthy();
+        expect(new t.Hello().world()).toEqual("world");
+    });
+
     it("reload test", () => {
         let t = load("./sample");
         let h = new t.Hello();

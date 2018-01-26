@@ -1,4 +1,4 @@
-const { global_registry, cache, reload, load, loaded, watcher, resolvePath, getCaller, enable_hotload, enable_features, enabled_features , feature_enabled, chain, template, handlebarTemplate} = require("../src/index");
+const { global_registry, pipe, cache, reload, load, loaded, watcher, resolvePath, getCaller, enable_hotload, enable_features, enabled_features , feature_enabled, chain, template, handlebarTemplate} = require("../src/index");
 const path = require("path");
 
 enable_features( {
@@ -68,6 +68,7 @@ describe("Core Function Test", () => {
             }),
             (name => name + " Third Time")])
             .then(name => expect(name).toEqual("Hello World Third Time"));
+        pipe("world")().then(text => expect(text).toBe("world"));
     });
 
     it("load test", () => {

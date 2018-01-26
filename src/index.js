@@ -722,6 +722,10 @@ const chain = (callback = null) => {
 
         // The callback is an array
         if(isArray(callback)) {
+            if(!callback.length) {
+                // If there is no callback in the chain, just resolve the args
+                return new Promise((resolve, reject) => resolve.apply(null, args));
+            }
             let c = callback.shift();
             // Start the chain
             let cc = chain(c).apply(null, args);

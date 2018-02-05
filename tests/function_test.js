@@ -1,4 +1,4 @@
-const { global_registry, pipe, cache, reload, load, loaded, watcher, resolvePath, getCaller, enable_hotload, enable_features, enabled_features , feature_enabled, chain, template, handlebarTemplate} = require("../src/index");
+const { global_registry, pipe, cache, reload, load, loaded, watcher, resolvePath, getCaller, enable_hotload, enable_features, enabled_features , feature_enabled, chain, template, handlebarTemplate, updateNodePath} = require("../src/index");
 const path = require("path");
 
 enable_features( {
@@ -98,4 +98,9 @@ describe("Core Function Test", () => {
         expect(template("hello", {name}).trim()).toEqual("Hello World");
         expect(handlebarTemplate(tt)).toBeTruthy();
     });
+
+    it("Update Node Path Test", () => {
+        expect(updateNodePath().indexOf(path.resolve(path.join(__dirname, "..")))).toBe(0);
+        console.info();
+    })
 });

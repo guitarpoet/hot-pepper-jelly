@@ -15,6 +15,34 @@ const Watcher = require("./watcher");
 
 const TRACE_REGEX = /^at ([<>._a-zA-Z]+) \(([^:]+):([0-9]+):([0-9]+)\)$/;
 
+const updateNodePath = (paths = []) => {
+    // Let's get the node path first
+    let p = process.env.NODE_PATH;
+
+    // Let's get the path of this
+    let pwd = path.resolve(path.join(__dirname, ".."));
+
+    if(isArray(paths)) {
+        // Add midori's path anyway
+        paths.push(`${pwd}/node_modules/@guitarpoet/midori`);
+    }
+
+    if(p) {
+        p = `${pwd}:${pwd}/node_modules:` + paths.join(":");
+    } else {
+        p = `${pwd}:${pwd}/node_modules:` + process.env.NODE_PATH + ":";
+        p += paths.join(":");
+    }
+
+    // Let's update nodejs's path
+    process.env.NODE_PATH = p;
+    if(typeof Module !== "undefined") {
+        // Update the require if in NodeJS
+        Module._initPaths();
+    }
+    return p;
+}
+
 const errput = (err) => {
     log(err, {}, "ERROR");
 }
@@ -769,5 +797,5 @@ function pipe(obj) {
 
 module.exports = {
     cache, loaded, reload, load, debug, log, registry, watcher, start_watch, end_watch, global_registry, watch_and_reload, getCaller, resolvePath, enable_hotload, enable_features, template,
-    enabled_features, feature_enabled, chain, handlebarTemplate, pipe
+    enabled_features, feature_enabled, chain, handlebarTemplate, pipe, updateNodePath
 }

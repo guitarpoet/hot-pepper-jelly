@@ -623,11 +623,16 @@ const resolvePath = (p, caller = null) => {
 /**
  * Load the module using the hot reload way
  */
-const load = (path, reload = false) => {
-    let caller = getCaller().file;
-    debug(`Trying to load module at path ${path} for caller ${caller}`);
+const load = (path, reload = false, resolver = null) => {
+    let realPath = false;
+    if(resolver && isFunction(resolver)) {
+        realPath = resolver(path);
+    } else {
+        let caller = getCaller().file;
+        debug(`Trying to load module at path ${path} for caller ${caller}`);
 
-    let realPath = resolvePath(path, caller);
+        realPath = resolvePath(path, caller);
+    }
     if(!realPath) {
         debug("Can't find path to load {{path}}", {path});
         return false;

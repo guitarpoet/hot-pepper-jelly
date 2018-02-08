@@ -99,6 +99,14 @@ describe("Core Function Test", () => {
         expect(handlebarTemplate(tt)).toBeTruthy();
     });
 
+    it("test load with resolver", () => {
+        // Load and force
+        let s = load("./sample", true, require.resolve);
+        l = load("lodash", true, require.resolve);
+        expect(s && s.Hello).toBeTruthy();
+        expect(l).toBeTruthy();
+    })
+
     it("Update Node Path Test", () => {
         expect(updateNodePath().indexOf(path.resolve(path.join(__dirname, "..")))).toBe(0);
         console.info();

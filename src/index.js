@@ -540,7 +540,7 @@ class ProxyHandler {
     construct (target, argumentsList, newTarget) {
         let obj = this.getObj();
         if(obj) {
-            let ret = new obj();
+            let ret = new obj(...argumentsList);
             // Update the prototype of the return object to be this
             ret.__proto__ = this.getPrototype();
             return ret;
@@ -643,10 +643,10 @@ const load = (path, reload = false, resolver = null) => {
         return require(realPath);
     }
 
+
     let l = proxy(realPath);
 
     if(l && !reload) {
-        debug(`Returning the loaded registry for ${path}`);
         return l;
     }
     return _reload(realPath);

@@ -2,8 +2,9 @@
  * The ES6 style autoload support
  *
  * @author Jack <jack@thinkingcloud.info>
- * @version 0.0.1
+ * @version 1.0.0
  * @date Thu Nov 30 11:28:41 2017
+ * @date-1.0 Mon Feb 12 15:56:33 2018
  */
 
 const { safeGet, propGet, getFileContentsSync, getFileContents } = require("./functions");
@@ -12,6 +13,7 @@ const fs = require("fs");
 const { keys, isDate, isNumber, isFunction, extend, isString, isArray, isSymbol } = require("lodash");
 const handlebars = require("handlebars");
 const Watcher = require("./watcher");
+const Module = require("module");
 
 const TRACE_REGEX = /^at ([<>._a-zA-Z]+) \(([^:]+):([0-9]+):([0-9]+)\)$/;
 
@@ -342,14 +344,6 @@ const loaded = (path, value = null, caller = null) => {
     return value;
 }
 
-/**
- * The old require
- */
-const _require = require;
-
-/**
- * Reload the
- */
 const _reload = (path, caller = null) => {
     // The absolute path of this required module
     let realPath = resolvePath(path, caller);
@@ -359,22 +353,21 @@ const _reload = (path, caller = null) => {
     }
     // Since we want to reload, let's purge the load cache first
     purgeCache(realPath);
+
     // Using nodejs's loader to load it again
-    let l = _require(realPath);
+    return require(realPath);
+}
 
-    if(l) {
+const proxyObj = (l, realPath) => {
+    // Create the return proxy
+    let ret = new Proxy(l, new ProxyHandler(realPath));
 
-        // Create the return proxy
-        let ret = new Proxy(l, new ProxyHandler(realPath));
+    // Add the real object into the registry
+    loaded(realPath, l);
+    // Add the proxy object into the registry too
+    proxy(realPath, ret);
 
-        // Add the real object into the registry
-        loaded(realPath, l);
-        // Add the proxy object into the registry too
-        proxy(realPath, ret);
-
-        return ret;
-    }
-    return false;
+    return ret;
 }
 
 /**
@@ -556,7 +549,7 @@ const purgeCache = (moduleName) => {
     // Traverse the cache looking for the files
     // loaded by the specified module name
     searchCache(moduleName, (mod) => {
-        delete _require.cache[mod.id];
+        delete require.cache[mod.id];
     });
 
     // Remove cached paths to the module.
@@ -574,11 +567,11 @@ const purgeCache = (moduleName) => {
  */
 const searchCache = (moduleName, callback) => {
     // Resolve the module identified by the specified name
-    let mod = _require.resolve(moduleName);
+    let mod = require.resolve(moduleName);
 
     // Check if the module has been resolved and found within
     // the cache
-    if (mod && ((mod = _require.cache[mod]) !== undefined)) {
+    if (mod && ((mod = require.cache[mod]) !== undefined)) {
         // Recursively go over the results
         ((mod) => {
             // Go over each of the module's children and
@@ -593,8 +586,8 @@ const searchCache = (moduleName, callback) => {
 };
 
 const searchCacheSync = (moduleName) => {
-    let mod = _require.resolve(moduleName);
-    if (mod && ((mod = _require.cache[mod]) !== undefined)) {
+    let mod = require.resolve(moduleName);
+    if (mod && ((mod = require.cache[mod]) !== undefined)) {
         return mod;
     }
     return false;
@@ -603,7 +596,7 @@ const searchCacheSync = (moduleName) => {
 const resolvePath = (p, caller = null) => {
     // Let's try the path first
     try {
-        let ret = _require.resolve(p);
+        let ret = require.resolve(p);
         if(ret) {
             return ret;
         }
@@ -611,7 +604,7 @@ const resolvePath = (p, caller = null) => {
     catch(ex) {
         // We can't resolve it, let's check if the caller exists
         if(caller && isString(caller)) {
-            let ret = _require.resolve(path.join(path.dirname(caller), p));
+            let ret = require.resolve(path.join(path.dirname(caller), p));
             if(ret) {
                 return ret;
             }
@@ -709,6 +702,10 @@ const watch_and_reload = (files = [], callback = null, async = true) => {
  * Enable the features using the hash
  */
 const enable_features = (features = {}) => {
+    if(features.hotload && !Module._orig_load) {
+        // We need enable the hot load hooks if we indeed wants hotload
+        hookModuleRequire();
+    }
     global_registry("features", extend(features, enabled_features()));
 }
 
@@ -731,6 +728,30 @@ const feature_enabled = (feature) => {
  */
 const enable_hotload = () => {
     enable_features({hotload: true});
+}
+
+/**
+ * This is added for the 1.0 feature, that will just use requie to provide the reload functions
+ *
+ * @api 1.0
+ */
+const hookModuleRequire = () => {
+    let { _load } = Module;
+    // Let's save the original _load function to another slot
+    Module._orig_load = _load;
+    // Then, replace it with our own
+    Module._load = (request, parent, isMain) => {
+        let realPath = Module._resolveFilename(request, parent, isMain);
+        let proxyPatterns = global_registry("module_proxy_patterns") || [];
+        let obj = _load(request, parent, isMain);
+        if(proxyPatterns && isArray(proxyPatterns) && proxyPatterns.length > 0) {
+            if(proxyPatterns.filter(p => realPath.match(p)).length == 0) {
+                // The path didn't match any pattern, let's just return the object
+                return obj;
+            }
+        }
+        return proxyObj(obj, realPath);
+    }
 }
 
 /**

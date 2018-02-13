@@ -14,6 +14,8 @@ const { keys, isDate, isNumber, isFunction, extend, isString, isArray, isSymbol 
 const handlebars = require("handlebars");
 const Watcher = require("./watcher");
 const Module = require("module");
+const MODULE_PROXY_PATTERNS_KEY = "module_proxy_patterns";
+const MODULE_PROXY_EXCLUDE_PATTERNS_KEY = "module_proxy_exclude_patterns";
 
 const TRACE_REGEX = /^at ([<>._a-zA-Z]+) \(([^:]+):([0-9]+):([0-9]+)\)$/;
 
@@ -730,6 +732,20 @@ const enable_hotload = () => {
     enable_features({hotload: true});
 }
 
+const proxy_patterns = (patterns = null) => {
+    if(patterns) {
+        global_registry(MODULE_PROXY_PATTERNS_KEY, patterns);
+    }
+    return global_registry(MODULE_PROXY_PATTERNS_KEY);
+}
+
+const proxy_exclude_patterns = (patterns = null) => {
+    if(patterns) {
+        global_registry(MODULE_PROXY_EXCLUDE_PATTERNS_KEY, patterns);
+    }
+    return global_registry(MODULE_PROXY_EXCLUDE_PATTERNS_KEY);
+}
+
 /**
  * This is added for the 1.0 feature, that will just use requie to provide the reload functions
  *
@@ -742,12 +758,21 @@ const hookModuleRequire = () => {
     // Then, replace it with our own
     Module._load = (request, parent, isMain) => {
         let realPath = Module._resolveFilename(request, parent, isMain);
-        let proxyPatterns = global_registry("module_proxy_patterns") || [];
+        let proxyPatterns = global_registry(MODULE_PROXY_PATTERNS_KEY) || [];
         let obj = _load(request, parent, isMain);
         if(proxyPatterns && isArray(proxyPatterns) && proxyPatterns.length > 0) {
             if(proxyPatterns.filter(p => realPath.match(p)).length == 0) {
                 // The path didn't match any pattern, let's just return the object
                 return obj;
+            }
+        }
+        let excludeProxyPatterns = global_registry(MODULE_PROXY_EXCLUDE_PATTERNS_KEY) || [];
+        if(excludeProxyPatterns && isArray(excludeProxyPatterns)) {
+            for(let p of excludeProxyPatterns) {
+                if(realPath.match(p)) {
+                    // This is the exclude pattern, let's return the object instead of proxy it
+                    return obj;
+                }
             }
         }
         return proxyObj(obj, realPath);
@@ -822,6 +847,8 @@ function pipe(obj) {
 }
 
 module.exports = {
-    cache, loaded, reload, load, debug, log, registry, watcher, start_watch, end_watch, global_registry, watch_and_reload, getCaller, resolvePath, enable_hotload, enable_features, template,
-    enabled_features, feature_enabled, chain, handlebarTemplate, pipe, updateNodePath
+    cache, loaded, reload, load, debug, log, registry, watcher, start_watch, end_watch, 
+    global_registry, watch_and_reload, getCaller, resolvePath, enable_hotload, enable_features, template,
+    enabled_features, feature_enabled, chain, handlebarTemplate, pipe, updateNodePath,
+    proxy_patterns, proxy_exclude_patterns, MODULE_PROXY_PATTERNS_KEY, MODULE_PROXY_EXCLUDE_PATTERNS_KEY
 }

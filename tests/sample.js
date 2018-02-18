@@ -3,6 +3,7 @@ class Test {
         return "Hello";
     }
 }
+
 class Hello {
     constructor() {
     }

@@ -9,7 +9,7 @@ enable_features( {
 // Add the templates directory of tests into the template path search
 global_registry("template_path", [ path.join(__dirname, "templates")]);
 
-describe("Core Function Test", () => {
+describe("Core Function", () => {
     it("hot load feature enable test", () => {
         expect(feature_enabled("hotload")).toBeTruthy();
     });
@@ -109,6 +109,16 @@ describe("Core Function Test", () => {
 
     it("Update Node Path Test", () => {
         expect(updateNodePath().indexOf(path.resolve(path.join(__dirname, "..")))).toBe(0);
-        console.info();
     })
+
+    it("Set Test", () => {
+        const {Hello} = load("./sample.js", true, require.resolve);
+        let h = new Hello();
+        h.a = 1;
+        expect(h.a).toEqual(1);
+        let h2 = new Hello();
+        h2.a = 2;
+        expect(h2.a).toEqual(2);
+        expect(h.a).toEqual(1);
+    });
 });

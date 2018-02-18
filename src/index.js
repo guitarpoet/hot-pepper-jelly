@@ -473,6 +473,7 @@ class ProxyHandler {
                 delete obj["__proxy__" + property];
             }
         }
+        return true;
     }
 
     apply(target, thisArg, argumentsList) {
@@ -507,24 +508,16 @@ class ProxyHandler {
     }
 
     getPrototype() {
+        let self = this;
         if(!this._proto) {
             this._proto = new Proxy(this.getObj(), {
-                has: (target, prop) => {
-                    let obj = this.getObj().prototype;
-                    if(obj) {
-                        return prop in obj;
+                get (target, prop, receiver) {
+                    // Let's check the property is in the object first
+                    if(prop in target) {
+                        return target[prop];
                     }
-                },
-
-                getOwnPropertyDescriptor: (target, prop) => {
-                    let obj = this.getObj().prototype;
-                    if(obj) {
-                        return Object.getOwnPropertyDescriptor(obj, prop);
-                    }
-                },
-
-                get: (target, prop, receiver) => {
-                    let obj = this.getObj().prototype;
+                    // Then, let's check if the property is in the prototype
+                    let obj = self.getObj().prototype;
                     return safeGet(obj, prop);
                 }
             });
@@ -847,7 +840,7 @@ function pipe(obj) {
 }
 
 module.exports = {
-    cache, loaded, reload, load, debug, log, registry, watcher, start_watch, end_watch, 
+    cache, loaded, reload, load, debug, log, registry, watcher, start_watch, end_watch,
     global_registry, watch_and_reload, getCaller, resolvePath, enable_hotload, enable_features, template,
     enabled_features, feature_enabled, chain, handlebarTemplate, pipe, updateNodePath,
     proxy_patterns, proxy_exclude_patterns, MODULE_PROXY_PATTERNS_KEY, MODULE_PROXY_EXCLUDE_PATTERNS_KEY

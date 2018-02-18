@@ -44,3 +44,9 @@ Why it is 1.0.1? Because I push the 1.0.0 of the hot-pepper-jelly to npm long ti
 Date: 2018-02-13
 
 This is the incremental release for the hot-pepper-jelly, it adds the class proxy white list and black list pattern support, so that when you are using the require way of hot loading, you can just hot load all modules, only the modules that you want to include
+
+# v1.0.3
+
+Date: 2018-02-18
+
+This update fixed the prototype bug that will cause the proxied object won't accept for new attributes.

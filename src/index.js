@@ -441,6 +441,13 @@ class ProxyHandler {
     get(target, prop, receiver) {
         let obj = this.getObj();
         if(obj && prop) {
+            if (prop === "__proto__") {
+                return obj.prototype;
+            }
+
+            if (prop === "constructor") {
+                return obj;
+            }
             let ret = safeGet(obj, prop);
             if(!this.prop) {
                 if(!ret || isDate(ret) || isString(ret) || isNumber(ret) || isSymbol(prop)) {
@@ -481,9 +488,9 @@ class ProxyHandler {
         if(obj) {
             debug(`Trying to call the proxied function in module ${this.path}`);
             if(thisArg) {
-                obj.apply(thisArg, argumentsList);
+                return obj.apply(thisArg, argumentsList);
             } else {
-                obj.apply(obj, argumentsList);
+                return obj.apply(obj, argumentsList);
             }
         }
         return null;
@@ -510,14 +517,23 @@ class ProxyHandler {
     getPrototype() {
         let self = this;
         if(!this._proto) {
-            this._proto = new Proxy(this.getObj(), {
+            this._proto = new Proxy(this.getObj().prototype, {
                 get (target, prop, receiver) {
+                    if (prop === "constructor") {
+                        return target;
+                    }
+
+                    if (prop === "__proto__") {
+                        return target.prototype;
+                    }
+
                     // Let's check the property is in the object first
                     if(prop in target) {
                         return target[prop];
                     }
-                    // Then, let's check if the property is in the prototype
-                    let obj = self.getObj().prototype;
+
+                    let obj = self.getObj();
+
                     return safeGet(obj, prop);
                 }
             });
@@ -527,8 +543,29 @@ class ProxyHandler {
 
     construct (target, argumentsList, newTarget) {
         let obj = this.getObj();
+        let self = this;
         if(obj) {
             let ret = new obj(...argumentsList);
+            return new Proxy(ret, {
+                get(target, prop, receiver) {
+                    obj = self.getObj();
+
+                    if (prop === "constructor") {
+                        return obj;
+                    }
+
+                    if (prop === "__proto__") {
+                        return obj.prototype;
+                    }
+
+                    // Let's check the property is in the object first
+                    if(prop in obj.prototype) {
+                        return obj.prototype[prop];
+                    }
+
+                    return safeGet(target, prop);
+                }
+            });
             // Update the prototype of the return object to be this
             ret.__proto__ = this.getPrototype();
             return ret;
@@ -832,6 +869,22 @@ const chain = (callback = null) => {
     }
 }
 
+const getModule = (request, options = {}) => {
+    // Let's get to the top most module
+    let m = module;
+    while(m.parent) {
+        m = m.parent;
+    }
+
+    if(m && request) {
+        let path = Module._resolveFilename(request, m, false, options);
+        if(path) {
+            return Module._cache[path]
+        }
+    }
+    return null;
+}
+
 function pipe(obj) {
     let args = Array.from(arguments);
     return function() {
@@ -843,5 +896,5 @@ module.exports = {
     cache, loaded, reload, load, debug, log, registry, watcher, start_watch, end_watch,
     global_registry, watch_and_reload, getCaller, resolvePath, enable_hotload, enable_features, template,
     enabled_features, feature_enabled, chain, handlebarTemplate, pipe, updateNodePath,
-    proxy_patterns, proxy_exclude_patterns, MODULE_PROXY_PATTERNS_KEY, MODULE_PROXY_EXCLUDE_PATTERNS_KEY
+    proxy_patterns, proxy_exclude_patterns, MODULE_PROXY_PATTERNS_KEY, MODULE_PROXY_EXCLUDE_PATTERNS_KEY, getModule
 }

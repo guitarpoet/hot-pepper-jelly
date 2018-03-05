@@ -6,39 +6,43 @@
  * @date Thu Nov 30 11:43:05 2017
  */
 
-const fs = require("fs");
-const path = require("path");
+const { get } = require("lodash");
 
-const safeGet = (obj, name, defaultValue = null) => {
-    if(obj && name) {
-        return obj[name] || defaultValue;
+/**
+ * This function will check if we are in NodeJS 
+ */
+const isNode = () => {
+    // Let's check if we can have the CommonJs first, since NodeJS must support CommonsJS in current version
+    if(typeof module !== "undefined" && module.exports) {
+        // Yes, we do have the CommonJs, but we are not sure if we are in the browser, let's check if we are in the browser
+        return typeof window === "undefined";
     }
-    return defaultValue;
+    // We are in the browser
+    return false;
 }
 
-const propGet = (obj, property, defaultValue = null) => {
-    let ps = property.split(".");
-    let o = obj;
-    while(ps.length) {
-        // Get the first key in the properties
-        let key = ps.shift();
-        o = safeGet(o, key);
-        if(!o) {
-            // If there is no value, let's break
-            break;
-        }
-    }
+// TODO: Maybe find a better way to handle this? Using some webpack's function to make this working better?
+const fs = isNode()? require("fs"): {};
+const path = isNode()? require("path"): {};
 
-    if([o, o === false, o === "", o === 0]
-        .filter(i => !!i)) {
-        return o;
-    }
+/**
+ * @deprecated This is deprecated in version 1.1, will be removed in the future version, use lodash's get instead
+ */
+const safeGet = get;
 
-    return defaultValue;
-}
+/**
+ * @deprecated This is deprecated in version 1.1, will be removed in the future version, use lodash's get instead
+ */
+const propGet = get; 
 
 const getFileContents = (path) => {
 	return new Promise((resolve, reject) => {
+        if(!isNode()) {
+            // TODO: We only reject the function for current version(version 1.1), need to find a better way to handle this function in the future
+            reject("We are not in the NodeJS environment, don't support file functions in browsers for version 1.1");
+            return;
+        }
+
 		fs.access(path, fs.constants.R_OK | fs.constants.W_OK, (err) => {
 			if(err) {
 				reject(`Error: Reading file ${path} -> ${err}`);
@@ -56,6 +60,11 @@ const getFileContents = (path) => {
 }
 
 const getFileContentsSync = (path) => {
+    if(!isNode()) {
+        // TODO: We only support NodeJS for the file functions for this version.
+        return false;
+    }
+
 	if(fs.existsSync(path)) {
 		return fs.readFileSync(path, "utf-8");
 	}
@@ -64,5 +73,5 @@ const getFileContentsSync = (path) => {
 
 
 module.exports = {
-	safeGet, propGet, getFileContentsSync, getFileContents
+	safeGet, propGet, getFileContentsSync, getFileContents, isNode
 }

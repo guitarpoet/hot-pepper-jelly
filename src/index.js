@@ -7,19 +7,24 @@
  * @date-1.0 Mon Feb 12 15:56:33 2018
  */
 
-const { safeGet, propGet, getFileContentsSync, getFileContents } = require("./functions");
-const path = require("path");
-const fs = require("fs");
+const { safeGet, propGet, getFileContentsSync, getFileContents, isNode } = require("./functions");
+const path = isNode()? require("path"): {};
+const fs = isNode()? require("fs"): {};
 const { keys, isDate, isNumber, isFunction, extend, isString, isArray, isSymbol } = require("lodash");
 const handlebars = require("handlebars");
 const Watcher = require("./watcher");
-const Module = require("module");
+const Module = typeof module != "undefined"? module.constructor: {};
 const MODULE_PROXY_PATTERNS_KEY = "module_proxy_patterns";
 const MODULE_PROXY_EXCLUDE_PATTERNS_KEY = "module_proxy_exclude_patterns";
 
 const TRACE_REGEX = /^at ([<>._a-zA-Z]+) \(([^:]+):([0-9]+):([0-9]+)\)$/;
 
 const updateNodePath = (paths = []) => {
+    if(!isNode()) {
+        // We'll return empty string since we are not in the NodeJS environment
+        return false;
+    }
+
     // Let's get the node path first
     let p = process.env.NODE_PATH;
 
@@ -63,6 +68,11 @@ const appendIfNotExists = (i, arr) => {
  * Resolve the templates
  */
 const resolveTemplate = (template) => {
+    if(!isNode()) {
+        // We only support the template resolve function in the NodeJS, if not in NodeJS, we just use the template string instead
+        return template;
+    }
+
     // The template paths registry, will store all template paths we have resolved
     let templatePathReg = registry("template_paths");
 
@@ -893,7 +903,7 @@ function pipe(obj) {
 }
 
 module.exports = {
-    cache, loaded, reload, load, debug, log, registry, watcher, start_watch, end_watch,
+    cache, loaded, reload, load, debug, log, registry, watcher, start_watch, end_watch, isNode,
     global_registry, watch_and_reload, getCaller, resolvePath, enable_hotload, enable_features, template,
     enabled_features, feature_enabled, chain, handlebarTemplate, pipe, updateNodePath,
     proxy_patterns, proxy_exclude_patterns, MODULE_PROXY_PATTERNS_KEY, MODULE_PROXY_EXCLUDE_PATTERNS_KEY, getModule

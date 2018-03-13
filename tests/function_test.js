@@ -1,4 +1,4 @@
-const { global_registry, pipe, cache, reload, load, loaded, watcher, resolvePath, getCaller, enable_hotload, enable_features, enabled_features , feature_enabled, chain, template, handlebarTemplate, updateNodePath} = require("../src/index");
+const { global_registry, pipe, cache, reload, load, loaded, watcher, resolvePath, getCaller, enable_hotload, enable_features, enabled_features , feature_enabled, chain, template, handlebarTemplate, updateNodePath } = require("../src/index");
 const path = require("path");
 
 enable_features( {
@@ -120,5 +120,10 @@ describe("Core Function", () => {
         h2.a = 2;
         expect(h2.a).toEqual(2);
         expect(h.a).toEqual(1);
+    });
+
+    it("template json test", () => {
+        let str = template("{{{json hello}}}", {hello: {name : "world"}});
+        console.info(str);
     });
 });

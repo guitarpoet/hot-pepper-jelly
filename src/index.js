@@ -19,6 +19,10 @@ const MODULE_PROXY_EXCLUDE_PATTERNS_KEY = "module_proxy_exclude_patterns";
 
 const TRACE_REGEX = /^at ([<>._a-zA-Z]+) \(([^:]+):([0-9]+):([0-9]+)\)$/;
 
+handlebars.registerHelper("json", (context) => {
+    return JSON.stringify(context);
+});
+
 const updateNodePath = (paths = []) => {
     if(!isNode()) {
         // We'll return empty string since we are not in the NodeJS environment

@@ -59,6 +59,17 @@ UNZIP := unzip
 RELOAD_CHROME := $(SILENT) sh chrome.sh reload
 RELOAD_SAFARI := $(SILENT) sh safari.sh reload
 XELATEX := xelatex
+SRC := src
+# All source code files are in the src folder, let's count them out
+ALL_SRC := $(shell find $(SRC) -name *.ts -not -name *.d.ts)
+# Translate the names from ts to js for all the dist files
+ALL_DIST := $(ALL_SRC:.ts=.js)
+TSC := $(shell which tsc)
+TSC_OPTIONS := --sourceMap true --module es6 --moduleResolution node --target ES2018 --allowJs true --experimentalDecorators true --module commonjs --lib es6
+JASMINE := ./node_modules/.bin/jasmine
+
+%.js: %.ts
+	$(TSC) $(TSC_OPTIONS) $<
 
 #===============================================================================
 #
@@ -76,6 +87,9 @@ ssh_exec = $(shell $(SSH) root@$(1) $(2))
 #
 #===============================================================================
 
-test:
-	$(SILENT) npm test
+test: $(ALL_DIST)
+	$(SILENT) NODEPATH=.:src:spec:node_modules $(JASMINE)
+clean:
+	$(SILENT) $(RM) $(ALL_DIST)
+.PHONY: clean
 

@@ -6,9 +6,9 @@
  * @date Sun Apr 29 18:31:17 2018
  */
 
-import { Repository, Registry, RegistryMetadata } from "./interfaces";
+import { Repository, Registry, RegistryMetadata, RegistryWatchEvent } from "./interfaces";
 import { keys } from "lodash";
-import { Observable } from "rxjs";
+import { Observable, Subject } from "rxjs";
 import "rxjs/add/observable/of";
 import "rxjs/add/operator/map";
 import "rxjs/add/operator/mergeMap";
@@ -23,6 +23,7 @@ export class SimpleRegistry implements Registry {
     private createDate: Date;
     private modifyDate: Date;
     private expiredDate: Date;
+    private subject: Subject<RegistryWatchEvent>;
 
     public constructor(name:string, value:any, repository:Repository, expiredDate:Date) {
         this.name = name;
@@ -36,13 +37,32 @@ export class SimpleRegistry implements Registry {
     }
 
     update(value:any):Observable<Registry> {
+        let origin = this.value;
         this.value = value;
         this.modifyDate = new Date();
+        if(this.subject) {
+            this.subject.next({
+                type: "change",
+                target: this,
+                tag: {
+                    origin,
+                    value
+                }
+            });
+        }
         return Observable.of(this);
     }
 
     isExpired():Observable<boolean> {
         return Observable.of(this.expiredDate && this.expiredDate.getTime() <= new Date().getTime());
+    }
+
+    watch():Subject<RegistryWatchEvent> {
+        // Only initialize the subject when there is some watching
+        if(!this.subject) {
+            this.subject = new Subject<RegistryWatchEvent>();
+        }
+        return this.subject;
     }
 
     meta():Observable<RegistryMetadata> {
@@ -115,5 +135,9 @@ export class SimpleRepository implements Repository {
 
     keys():Observable<Array<string>> {
         return Observable.of(keys(this._registries));
+    }
+
+    watch(name:string):Observable<Subject<RegistryWatchEvent>> {
+        return this.getRegistry(name, true).map(r => r.watch());
     }
 }

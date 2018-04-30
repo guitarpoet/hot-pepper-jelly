@@ -5,8 +5,11 @@
  * @version 2.0.0
  * @date Sun Apr 29 14:46:08 2018
  */
+declare const window:any;
 
 import { Observable } from "rxjs"
+import { Repository } from "./interfaces";
+import { SimpleRepository } from "./Repository";
 
 /**
  * This function will check if the environment is in the NodeJS
@@ -20,3 +23,16 @@ export const isNode:Observable<boolean> = Observable.create(obs => {
 		obs.next(false);
 	}
 });
+
+
+/**
+ * This is the global registry for this repository
+ */
+export const _global = new SimpleRepository();
+
+/**
+ * Get or create a repository from the global repository
+ */
+export const registry = (name:string):Observable<Repository> => {
+    return null;
+}

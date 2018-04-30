@@ -1,8 +1,10 @@
-const { SimpleRepository } = require("../src/Repository");
+const {
+    SimpleRepository
+} = require("../src/Repository");
 
 describe("the repository implementation tests", () => {
     it("test repository apis", () => {
-        let r= new SimpleRepository();
+        let r = new SimpleRepository();
         r.set("hello", "world").flatMap(reg => reg.get("hello")).subscribe({
             next(data) {
                 expect(data).toEqual("world");
@@ -20,6 +22,20 @@ describe("the repository implementation tests", () => {
                 expect(data).toEqual(1);
             }
         });
+
+        r.watch("a").map(sub => {
+            sub.subscribe({
+                next(x) {
+                    expect(x).toBeTruthy();
+                    expect(x.tag).toBeTruthy();
+                    expect(x.type).toEqual("change");
+                    expect(x.tag.origin).toEqual(data.a);
+                    expect(x.tag.value).toEqual(10);
+                }
+            });
+        })
+
+        r.set("a", 10).subscribe();
 
         r.keys().subscribe({
             next(data) {

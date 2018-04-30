@@ -5,7 +5,7 @@
  * @version 2.0.0
  * @date Sun Apr 29 15:04:17 2018
  */
-import { Observable } from "rxjs"
+import { Observable, Subject } from "rxjs"
 
 export const TYPE_NODE:string = "node";
 export const TYPE_BROWSER:string = "browser";
@@ -14,6 +14,15 @@ export const RESULT_TYPE_JSON:string = "json";
 export const RESULT_TYPE_YAML:string = "yaml";
 
 const yaml = require("yamljs");
+
+/**
+ * This is the interface for resovling the module, it can support the module resovle using
+ * webpack and the NodeJS, in the NodeJS envrionment, it will use NodeJs's way to resolve the
+ * module, and in the browser environment, it will use the Webpack to resolve the module
+ */
+export interface ModuleResolver {
+    resolve(path: string): Observable<any>;
+}
 
 export interface ResourceResolver {
 	/**
@@ -67,6 +76,8 @@ export interface Repository {
 	get(name:string):Observable<any>;
 
     keys():Observable<Array<string>>;
+
+    watch(name:string):Observable<Subject<RegistryWatchEvent>>;
 }
 
 export interface RegistryMetadata {
@@ -77,9 +88,16 @@ export interface RegistryMetadata {
 	name: string;
 }
 
+export interface RegistryWatchEvent {
+    type: string;
+    target: Registry;
+    tag: any;
+}
+
 export interface Registry {
     update(value:any):Observable<Registry>;
     isExpired():Observable<boolean>;
     get():Observable<any>;
     meta():Observable<RegistryMetadata>;
+    watch():Subject<RegistryWatchEvent>;
 }

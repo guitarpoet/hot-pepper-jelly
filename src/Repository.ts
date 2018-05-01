@@ -7,11 +7,12 @@
  */
 
 import { Repository, Registry, RegistryMetadata, RegistryWatchEvent } from "./interfaces";
-import { keys } from "lodash";
+import { keys, isArray } from "lodash";
 import { Observable, Subject } from "rxjs";
 import "rxjs/add/observable/of";
 import "rxjs/add/operator/map";
 import "rxjs/add/operator/mergeMap";
+import "rxjs/add/operator/merge";
 
 /**
  * This is a simple registry which will use the on site memory to store the data
@@ -137,7 +138,22 @@ export class SimpleRepository implements Repository {
         return Observable.of(keys(this._registries));
     }
 
-    watch(name:string):Observable<Subject<RegistryWatchEvent>> {
-        return this.getRegistry(name, true).map(r => r.watch());
+    watch(name:string|Array<string>):Observable<Subject<RegistryWatchEvent>> {
+        let arr:Array<string> = null;
+        if(isArray(name)) {
+            arr = name as Array<string>;
+        } else {
+            arr = [name as string];
+        }
+
+        let obs:Observable<Registry> = null;
+        for(let str of arr) {
+            if(obs) {
+                obs = obs.merge(this.getRegistry(str, true));
+            } else {
+                obs = this.getRegistry(str, true);
+            }
+        }
+        return obs.map(r => r.watch());
     }
 }

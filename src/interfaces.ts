@@ -77,7 +77,7 @@ export interface Repository {
 
     keys():Observable<Array<string>>;
 
-    watch(name:string):Observable<Subject<RegistryWatchEvent>>;
+    watch(name:string|Array<string>):Observable<Subject<RegistryWatchEvent>>;
 }
 
 export interface RegistryMetadata {

@@ -1,5 +1,5 @@
 /**
- * This is the util functions that will be used, nearly all of them are Rxjs based 
+ * This is the util functions that will be used, nearly all of them are Rxjs based
  *
  * @author Jack <jack@thinkingcloud.info>
  * @version 2.0.0
@@ -10,18 +10,19 @@ declare const window:any;
 import { Observable } from "rxjs"
 import { Repository } from "./interfaces";
 import { SimpleRepository } from "./Repository";
+import "rxjs/add/observable/of";
 
 /**
  * This function will check if the environment is in the NodeJS
  */
 export const isNode:Observable<boolean> = Observable.create(obs => {
     if(typeof module !== "undefined" && module.exports) {
-		// We are in the common js environment, if we do have the DOM, we can assume that we are not in the NodeJS, or we are the other way
-		obs.next(typeof window === "undefined");
-	} else {
-		// We are not in the common js environment, which means we are not in NodeJS
-		obs.next(false);
-	}
+        // We are in the common js environment, if we do have the DOM, we can assume that we are not in the NodeJS, or we are the other way
+        obs.next(typeof window === "undefined");
+    } else {
+        // We are not in the common js environment, which means we are not in NodeJS
+        obs.next(false);
+    }
 });
 
 
@@ -34,5 +35,14 @@ export const _global = new SimpleRepository();
  * Get or create a repository from the global repository
  */
 export const registry = (name:string):Observable<Repository> => {
-    return null;
+    return _global.get(name) // Try get the value first
+        .flatMap(r => {
+            if(!r) {
+                // If the value is null
+                return _global.set(name, new SimpleRepository())
+                    .flatMap(g => g.get(name)); // And get the get result
+            } else {
+                return Observable.of(r);
+            }
+        });
 }

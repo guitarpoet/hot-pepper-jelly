@@ -33,9 +33,10 @@ describe("the repository implementation tests", () => {
                     expect(x.tag.value).toEqual(10);
                 }
             });
-        })
+        }).subscribe();
 
         r.set("a", 10).subscribe();
+        r.set("b", 10).subscribe();
 
         r.keys().subscribe({
             next(data) {

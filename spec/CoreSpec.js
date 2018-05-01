@@ -1,4 +1,4 @@
-const {isNode} = require("../src/core");
+const {isNode, registry} = require("../src/core");
 
 describe("core function test", () => {
 	it("is node test", () => {
@@ -10,5 +10,14 @@ describe("core function test", () => {
 				fail(e);
 			}
 		});
+	});
+
+	it("registry test", () => {
+        registry("hello").subscribe(reg => {
+            console.info(reg);
+        });
+        registry("hello").subscribe(reg => {
+            console.info(reg);
+        });
 	});
 });

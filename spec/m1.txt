@@ -1,0 +1,7 @@
+#include ./m2.txt
+#define a 1
+#ifenv a
+#define b 2
+#else
+#define b 3
+#endif

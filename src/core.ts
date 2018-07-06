@@ -99,3 +99,6 @@ export const template = (template:string, context:any = {}):Observable<string> =
 		});
 	});
 }
+
+export const print = (context:any = ""):any => (obj:any):string => (!console.info(context, obj) && obj as string)
+

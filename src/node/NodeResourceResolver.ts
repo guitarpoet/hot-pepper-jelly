@@ -29,6 +29,7 @@ export const resolve = (request: string, mod:any = null):Observable<string> => O
 	const paths = Module._resolveLookupPaths(request, mod, true);
 
 	obs.next(Module._findPath(request, paths, true));
+	obs.complete();
 });
 
 export class NodeResourceResolver implements ResourceResolver {
@@ -57,10 +58,18 @@ export class NodeResourceResolver implements ResourceResolver {
 					const fs = require("fs");
 					// We only need to read the file if the path is resolved
 					fs.readFile(p, "utf-8", (err, data) => {
-						if(err) {
-							obs.error(err);
-						} else {
-							obs.next(data);
+						try {
+							if(err) {
+								obs.error(err);
+							} else {
+								obs.next(data);
+							}
+						}
+						catch(e) {
+							obs.next(e);
+						}
+						finally {
+							obs.complete();
 						}
 					});
 				});
@@ -68,7 +77,6 @@ export class NodeResourceResolver implements ResourceResolver {
 				return Observable.of(null);
 			}
 		});
-
 	}
 
 	getContents(path:string, resultType:string): Observable<any> {

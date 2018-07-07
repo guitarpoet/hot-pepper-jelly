@@ -9,43 +9,54 @@
 import * as fs from "fs";
 import * as path from "path";
 import { isFunction, isArray } from "lodash";
+import { Observable } from "rxjs/Observable";
+import "rxjs/add/observable/from";
+import "rxjs/add/operator/mergeMap";
+
+export interface WatchEvent {
+    eventType:string;
+    filename:string;
+}
 
 /**
  * The watcher will watch folder and file's change
  */
 export class Watcher {
-	private watchers:Array<any>;
+    private watchers:Array<any> = [];
+    private handle:any = null;
+    private w:Observable<WatchEvent>;
 
-	watch(files:Array<string> | string = [], callback:any = null) {
-        if(files) {
-            if(!isArray(files)) {
-                files = [files as string];
-            }
-
-            if(callback && !this.watchers) {
-				this.watchers = (<Array<string>> files).map(f => {
-                    return fs.watch(f, (eventType, filename) => {
+    watch(...files:Array<string>):Observable<WatchEvent> {
+        if(!this.w) {
+            this.w = Observable.from(files).flatMap(f => {
+                return Observable.create(obs => {
+                    this.handle = obs;
+                    this.watchers.push(fs.watch(f, (eventType, filename) => {
                         if (filename) {
                             let p = path.resolve(path.join(f, filename));
                             if(fs.existsSync(p)) {
-                                callback(p, eventType);
+                                obs.next({filename:p , eventType});
                             }
                         }
-                    });
+                    }));
                 });
-            }
+            });
         }
+        return this.w;
     }
 
     watching():boolean {
-        return !!this.watchers;
+        return !!this.handle;
     }
 
     endWatch():void {
         if(this.watching() && isArray(this.watchers)) {
             this.watchers.map(w => w.close());
-			// Clear the watch
-			this.watchers = null;
+            // Clear the watch
+            this.watchers = [];
+            this.handle.complete();
+            this.handle = null;
+            this.w = null;
         }
     }
 }

@@ -19,9 +19,6 @@ const topMostModule = ():any => {
 	return topmost;
 }
 
-const purgeCache = (moduleName:string):void => {
-};
-
 export class NodeModuleLoader extends AbstractModuleLoader {
 	private resolver:NodeResourceResolver;
 
@@ -35,6 +32,8 @@ export class NodeModuleLoader extends AbstractModuleLoader {
 	}
 
 	purge(mod:string):Observable<boolean> {
+        // Clear the super's cache first 
+        super.purge(mod);
 		let m = this.cache(mod);
 		if(m) {
 			delete require.cache[m.id];
@@ -57,7 +56,7 @@ export class NodeModuleLoader extends AbstractModuleLoader {
 		if(key) {
 			return require.cache[key];
 		}
-		return require.cache;
+        return require.cache;
 	}
 
 	_load(mod:string):Observable<any> {

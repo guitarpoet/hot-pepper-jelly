@@ -2,6 +2,8 @@ const {
 	NodeModuleLoader
 } = require("../src/node/NodeModuleLoader");
 
+require("rxjs/add/operator/delay");
+
 describe("node module loader test", () => {
 	it("resolve test", (done) => {
 		let loader = new NodeModuleLoader(module);
@@ -45,10 +47,14 @@ describe("node module loader test", () => {
 
 	it("reload test", (done) => {
 		let loader = new NodeModuleLoader(module);
-		loader.load("./sample").flatMap((m1) => loader.reload("./sample").map(m2 => ({m1, m2}))).subscribe(data => {
-			expect(data.m1 && data.m2).toBeTruthy();
-			expect(data.m1.date == data.m2.date).toBeFalsy();
-			done();
-		});
+		let { date } = require("./sample");
+		loader.reload("./sample")
+			.concat(loader.reload("./sample")).reduce((a, i) => a.push(i) && a, []).subscribe(data => {
+				let orig = data[0];
+				let now = data[1];
+				expect(require("./sample").Hello === now.Hello).toBeFalsy()
+				expect(now.date !== date).toBeTruthy();
+				done();
+			});
 	});
 });

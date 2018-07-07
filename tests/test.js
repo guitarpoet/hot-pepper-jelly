@@ -1,21 +1,38 @@
-const { load, reload, start_watch, watch_and_reload, debug, enable_features } = require("../src/index");
+const {
+	NodeModuleLoader
+} = require("../src/node/NodeModuleLoader");
 
-enable_features( {
-    hotload: true, // Enable the hot load
-    template_file: true // Enable the template file
+const {
+	Watcher
+} = require("../src/node/Watcher");
+
+let loader = new NodeModuleLoader(module);
+let watcher = new Watcher();
+
+
+loader.load("./sample").subscribe(Test => {
+	const {
+		Hello,
+		date
+	} = Test;
+
+	let h = new Hello();
+	let t = new Test();
+
+	setInterval(() => {
+        console.info(Test.date);
+		console.info(new Hello().world(), h.world());
+		console.info(new Test().hello(), t.hello());
+	}, 1000);
 });
 
-const { Hello, date } = load("./sample");
-const Test = load("sample");
+watcher.watch([__dirname], (file_path, type) => {
+	if (file_path.match(/.js$/) || file_path.match(/.json$/)) {
+		// Only check for js and json
+		console.info(`Reloading file ${file_path}`);
 
-let h = new Hello();
-let t = new Test();
-
-setInterval(() => {
-    console.info(new Hello().world(), h.world());
-    console.info(new Test().hello(), t.hello());
-}, 1000);
-
-watch_and_reload([__dirname], (module, path, type) => {
-    debug("The file {{path}} is updated, and the type is {{type}}", {path, type});
-}, false);
+		loader.reload(file_path).subscribe(m => {
+			console.info(file_path, type);
+		});
+	}
+});

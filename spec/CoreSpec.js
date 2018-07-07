@@ -4,6 +4,9 @@ const {
     registry,
     template,
     global_registry,
+    enable_features,
+    features_enabled,
+    enabled_features
 } = require("../src/core");
 const {
     NodeResourceResolver
@@ -21,9 +24,13 @@ const {
     format
 } = require("../src/filters/ContextFilter");
 
-const { transformResult } = require("../src/interfaces");
+const {
+    transformResult
+} = require("../src/interfaces");
 
-const { Observable } = require("rxjs/Observable");
+const {
+    Observable
+} = require("rxjs/Observable");
 
 // Add the source map support for testing
 require('source-map-support').install();
@@ -49,7 +56,7 @@ describe("core function test", () => {
                 expect(process.env.a).toBeTruthy();
                 expect(process.env.b == 2).toBeTruthy();
                 expect(process.env.c == 3).toBeTruthy();
-                console.info(data);
+                expect(data.a).toEqual("Hello World");
                 done();
             });
     });
@@ -74,5 +81,28 @@ describe("core function test", () => {
                 done();
             })
         })
+    });
+
+    it("enable features test", (done) => {
+        enable_features({
+            hello: "world"
+        }).subscribe(data => {
+            expect(data.hello).toEqual("world");
+            done();
+        });
+
+        enable_features({
+                hello: "world"
+            }).flatMap(() => features_enabled("hello"))
+            .subscribe(data => {
+                expect(data).toBeTruthy();
+            });
+
+        enable_features({
+                hello: "world"
+            }).flatMap(() => features_enabled("hello", "not_exists"))
+            .subscribe(data => {
+                expect(data).toBeFalsy();
+            });
     });
 });

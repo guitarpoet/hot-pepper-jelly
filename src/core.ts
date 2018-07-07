@@ -16,6 +16,7 @@ import "rxjs/add/operator/first";
 import "rxjs/add/operator/filter";
 import "rxjs/add/operator/concat";
 import * as tinyliquid from "tinyliquid";
+import { extend } from "lodash";
 
 /**
  * This function will check if the environment is in the NodeJS
@@ -75,6 +76,25 @@ export const global_registry = (name:string, value:any = null):Observable<any> =
 
 export const template_registry = (name:string, value:any = null):Observable<any> => {
 	return registry_value("global", name, value);
+}
+
+export const features_enabled = (...features:string[]):Observable<boolean> => {
+	return enabled_features().map(fs => {
+		for(let feature of features) {
+			if(!fs[feature]) {
+				return false;
+			}
+		}
+		return true;
+	});
+}
+
+export const enabled_features = ():Observable<any> => {
+	return global_registry("features").map(i => i?i:{});
+}
+
+export const enable_features = (features:any = {}):Observable<any> => {
+	return enabled_features().flatMap(orig => global_registry("features", extend(features, orig)));
 }
 
 export const template = (template:string, context:any = {}):Observable<string> => {

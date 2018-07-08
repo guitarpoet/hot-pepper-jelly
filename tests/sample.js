@@ -9,7 +9,7 @@ class Hello {
     }
 
 	world() {
-		return "world";
+		return "world 1";
 	}
 }
 

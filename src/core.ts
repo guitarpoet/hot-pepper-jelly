@@ -16,7 +16,7 @@ import "rxjs/add/operator/first";
 import "rxjs/add/operator/filter";
 import "rxjs/add/operator/concat";
 import * as tinyliquid from "tinyliquid";
-import { extend } from "lodash";
+import { extend, isObject, isArray } from "lodash";
 
 /**
  * This function will check if the environment is in the NodeJS
@@ -122,3 +122,33 @@ export const template = (template:string, context:any = {}):Observable<string> =
 
 export const print = (context:any = ""):any => (obj:any):string => (!console.info(context, obj) && obj as string)
 
+
+export const tokenizePath = (path:string):Array<string> => {
+    let paths = path.split(".");
+    let ret:Array<string> = [];
+    while (paths.length) {
+        // Add the paths into the ret
+        ret.push(paths.join("."));
+        // Remove the last path
+        paths.pop();
+    }
+    return ret;
+}
+
+export const paths = (obj:any):Array<string> => {
+    let ret:Array<string> = [];
+    if (isObject(obj)) {
+        // If this is an object
+        for (let p in obj) {
+            ret.push(p);
+            ret = ret.concat(paths(obj[p]).map(t => p + "." + t));
+        }
+    } else if (isArray(obj)) {
+        // If this is an array
+        for (let i = 0; i <= obj.length; i++) {
+            ret.push(i + "");
+            ret = ret.concat(paths(obj[i]));
+        }
+    }
+    return ret;
+}

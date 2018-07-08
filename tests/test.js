@@ -3,13 +3,18 @@ const {
 } = require("../src/node/NodeModuleLoader");
 
 const {
+    enable_features
+} = require("../src/core");
+
+
+enable_features({hotload: true}).subscribe();
+const {
     Watcher
 } = require("../src/node/Watcher");
 
 require("rxjs/add/operator/filter");
 
 let loader = new NodeModuleLoader(module);
-let watcher = new Watcher();
 
 loader.load("./sample").subscribe(Test => {
     const {
@@ -27,7 +32,7 @@ loader.load("./sample").subscribe(Test => {
     }, 1000);
 });
 
-watcher.watch(__dirname).filter(({
+new Watcher().watch(__dirname).filter(({
     filename
 }) => filename.match(/.js$/) || filename.match(/.json$/)).subscribe(({
     filename,

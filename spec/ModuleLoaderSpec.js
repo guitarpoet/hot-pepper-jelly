@@ -1,6 +1,12 @@
 const {
 	NodeModuleLoader
 } = require("../src/node/NodeModuleLoader");
+const {
+    enable_features
+} = require("../src/core");
+
+// Let's enable hotload first
+enable_features({hotload: true}).subscribe();
 
 require("rxjs/add/operator/delay");
 

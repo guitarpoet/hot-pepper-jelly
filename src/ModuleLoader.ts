@@ -61,11 +61,16 @@ export abstract class AbstractModuleLoader implements ModuleLoader {
                 if(c) {
                     return Observable.of(c);
                 }
-                return this._load(r)
-                // Store the original object into the local object map
-                    .map(m => this.origins[r] = m && m)
-                // Will try proxy it when loaded
-                    .flatMap(obj => this.proxy(obj, r));
+                return features_enabled("hotload").flatMap(enabled => {
+                    let ret = this._load(r);
+                    if(enabled) {
+                        // Store the original object into the local object map
+                        ret = ret.map(m => this.origins[r] = m && m)
+                        // Will try proxy it when loaded
+                            .flatMap(obj => this.proxy(obj, r))
+                    }
+                    return ret;
+                })
             }
             // Since it is not resolved, let's just return null
             return Observable.of(null);

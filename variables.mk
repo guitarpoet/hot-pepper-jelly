@@ -1,6 +1,6 @@
 SRC := src
 # All source code files are in the src folder, let's count them out
-ALL_SRC := $(shell find $(SRC) -name *.ts -not -name *.d.ts)
+ALL_SRC := $(shell find $(SRC) -name "*.ts" -not -name *.d.ts) core.ts node.ts
 # Translate the names from ts to js for all the dist files
 ALL_DIST := $(ALL_SRC:.ts=.js)
 TSC := $(shell which tsc)

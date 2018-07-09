@@ -27,6 +27,8 @@ import {
     process_common
 } from "./src/filters/TextFilters";
 
+import { resolve } from "path";
+
 import {
     format,
     context,
@@ -52,7 +54,7 @@ export const configure = (file:string, m:any = null):Observable<any> => {
     // Let's process the includes then
         .flatMap(process_includes(resolver))
     // Let's process the context
-        .flatMap(context(file, resolver, {file}))
+        .flatMap(context(file, resolver, {file, pwd: resolve(".")}))
     // Then, let's reduce it into one string
         .reduce(text(), "")
     // Parse it as YAML

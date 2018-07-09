@@ -5,3 +5,4 @@ b: Goodbye World
 c: Hello {{name}} - {{version}}
 d: {{file}}
 e: {{path}}
+f: {{pwd}}

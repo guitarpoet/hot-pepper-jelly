@@ -22,6 +22,7 @@ const core_1 = require("./core");
 const NodeResourceResolver_1 = require("./src/node/NodeResourceResolver");
 const NodeModuleLoader_1 = require("./src/node/NodeModuleLoader");
 const TextFilters_1 = require("./src/filters/TextFilters");
+const path_1 = require("path");
 const ContextFilter_1 = require("./src/filters/ContextFilter");
 exports.configure = (file, m = null) => {
     // Construct the resuolver first
@@ -35,7 +36,7 @@ exports.configure = (file, m = null) => {
         // Let's process the includes then
         .flatMap(TextFilters_1.process_includes(resolver))
         // Let's process the context
-        .flatMap(ContextFilter_1.context(file, resolver, { file }))
+        .flatMap(ContextFilter_1.context(file, resolver, { file, pwd: path_1.resolve(".") }))
         // Then, let's reduce it into one string
         .reduce(ContextFilter_1.text(), "")
         // Parse it as YAML

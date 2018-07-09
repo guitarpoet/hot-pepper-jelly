@@ -6,7 +6,7 @@
  * @date Fri Jul  6 00:08:59 2018
  */
 
-import { ResourceResolver, RESULT_TYPE_TXT, RESULT_TYPE_JSON, RESULT_TYPE_YAML, transformResult } from "../interfaces";
+import { ResourceResolver, RESULT_TYPE_JSON, RESULT_TYPE_YAML, transformResult } from "../interfaces";
 import { Observable } from "rxjs/Observable"
 import "rxjs/add/observable/of";
 import "rxjs/add/observable/forkJoin";
@@ -18,8 +18,7 @@ import "rxjs/add/operator/mergeMap";
 import "rxjs/add/operator/concat";
 import "rxjs/add/operator/first";
 import "rxjs/add/operator/filter";
-import { template, print } from "../core";
-import { split } from "./TextFilters";
+import { template } from "../core";
 import { isObject, isArray, isFunction, isString, extend } from "lodash";
 import { AbstractModuleLoader } from "../ModuleLoader";
 
@@ -126,6 +125,11 @@ const overlay = (dest:any, src:any):any => {
 }
 
 const processAlias = (aliases:any, data):any => {
+    if(data.$aliases) {
+        // If there is the aliases in the data, then use it as the base
+        aliases = extend(aliases || {}, data);
+    }
+
     if(aliases) {
         // Only process it when there is aliases definitions
         if(isObject(data)) {

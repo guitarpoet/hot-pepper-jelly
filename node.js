@@ -20,6 +20,7 @@ require("rxjs/add/observable/of");
 require("rxjs/add/observable/from");
 const core_1 = require("./core");
 const NodeResourceResolver_1 = require("./src/node/NodeResourceResolver");
+const NodeModuleLoader_1 = require("./src/node/NodeModuleLoader");
 const TextFilters_1 = require("./src/filters/TextFilters");
 const ContextFilter_1 = require("./src/filters/ContextFilter");
 exports.configure = (file, m = null) => {
@@ -38,6 +39,14 @@ exports.configure = (file, m = null) => {
         // Then, let's reduce it into one string
         .reduce(ContextFilter_1.text(), "")
         // Parse it as YAML
-        .map(ContextFilter_1.format());
+        .map(ContextFilter_1.format())
+        // Then process the base
+        .flatMap(ContextFilter_1.process_base())
+        // Then process the aliases
+        .flatMap(ContextFilter_1.process_alias())
+        // Then process the aliases
+        .flatMap(ContextFilter_1.process_composite())
+        // Then process the objects
+        .flatMap(ContextFilter_1.process_object(new NodeModuleLoader_1.NodeModuleLoader(m)));
 };
 //# sourceMappingURL=node.js.map

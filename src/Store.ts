@@ -8,7 +8,7 @@
 
 import { tokenizePath, paths } from "./core";
 import { Subject, BehaviorSubject } from "rxjs";
-import { get, set, extend } from "lodash";
+import { get, set } from "lodash";
 import { Observable } from "rxjs";
 
 /**

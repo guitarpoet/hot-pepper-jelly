@@ -19,7 +19,7 @@ import "rxjs/add/observable/from";
 
 import { RESULT_TYPE_TXT } from "./core";
 import { NodeResourceResolver } from "./src/node/NodeResourceResolver";
-import { NodeModuleResolver } from "./src/node/NodeModuleResolver";
+import { NodeModuleLoader } from "./src/node/NodeModuleLoader";
 
 import {
 	split,
@@ -56,5 +56,13 @@ export const configure = (file:string, m:any = null):Observable<any> => {
 	// Then, let's reduce it into one string
 		.reduce(text(), "")
 	// Parse it as YAML
-		.map(format());
+        .map(format())
+    // Then process the base
+        .flatMap(process_base())
+    // Then process the aliases
+        .flatMap(process_alias())
+    // Then process the aliases
+        .flatMap(process_composite())
+    // Then process the objects
+        .flatMap(process_object(new NodeModuleLoader(m)));
 }

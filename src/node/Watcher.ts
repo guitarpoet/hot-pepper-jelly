@@ -8,7 +8,7 @@
 
 import * as fs from "fs";
 import * as path from "path";
-import { isFunction, isArray } from "lodash";
+import { isArray } from "lodash";
 import { Observable } from "rxjs/Observable";
 import "rxjs/add/observable/from";
 import "rxjs/add/operator/mergeMap";

@@ -12,7 +12,7 @@ import "rxjs/add/observable/from";
 import "rxjs/add/operator/mergeMap";
 
 import { ResourceResolver, RESULT_TYPE_TXT } from "../interfaces";
-import { flatten, replace, isArray, isString } from "lodash";
+import { flatten, isArray, isString } from "lodash";
 
 
 const INCLUDE_PATTERN:RegExp = /^[ \t]*#include ([a-zA-Z0-9\\._\/]+)/;
@@ -26,9 +26,7 @@ const END_IF_PATTERN:RegExp = /^([ \t])*#endif$/;
 const DEFINE_PATTERN:RegExp = /^([ \t])*#define ([a-z\\.A-Z_]+)( (.+))?/;
 const UNDEFINE_PATTERN:RegExp = /^([ \t])*#undefine ([a-z\\.A-Z_]+)/;
 const EXPR_PATTERN:RegExp = /^([ \t])*#expr (.+)$/;
-const PLACE_HOLDER_PATTERN:RegExp = /\$\([a-zA-Z0-9\\._]+\)/g;
-const JSON_PATTERN:RegExp = /([ \t])*#json ([a-zA-Z0-9\\._\/]+)$/; // Yes, sorry, we don't support blank in the file name
-const ENABLE_PATTERN:RegExp = /^([ \t])*#enable (([a-z\\.A-Z_]+)([ \t]*,[ \t]*[a-z\\.A-Z_]+)*)$/;
+//const ENABLE_PATTERN:RegExp = /^([ \t])*#enable (([a-z\\.A-Z_]+)([ \t]*,[ \t]*[a-z\\.A-Z_]+)*)$/;
 
 
 // Let's define the evluate function
@@ -351,7 +349,5 @@ export const process_common = ():any => {
 		} else {
 			return Observable.from([]);
 		}
-
-		return null;
 	}
 }

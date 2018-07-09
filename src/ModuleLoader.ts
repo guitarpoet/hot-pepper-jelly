@@ -358,9 +358,6 @@ export class ProxyHandler {
                     return get(target, prop);
                 }
             });
-            // Update the prototype of the return object to be this
-            ret.__proto__ = this.getPrototype();
-            return ret;
         }
         return null;
     }

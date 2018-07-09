@@ -37,8 +37,8 @@ exports.context = (file, resolver, base = {}) => {
     return (contents) => {
         let getThePath = Observable_1.Observable.of(thePath);
         let setThePath = resolver.resolve(file).map(p => (thePath = p) && p);
-        let setTheContext = (contextFile) => (resolver.getContents(contextFile, interfaces_1.RESULT_TYPE_JSON));
-        return getThePath.concat(setThePath).first().flatMap(path => {
+        let setTheContext = (contextFile) => (resolver.getContents(contextFile, interfaces_1.RESULT_TYPE_JSON)).map(o => lodash_1.extend(base, o));
+        return getThePath.concat(setThePath).filter(i => !!i).first().flatMap(path => {
             // Let's check the line if it is the context pattern
             let m = contents.match(CONTEXT_PATTERN);
             if (m) {
@@ -50,7 +50,7 @@ exports.context = (file, resolver, base = {}) => {
                 if (theContext) {
                     // We only handle when context exists
                     if (contents.match(PLACE_HOLDER_PATTERN)) {
-                        return theContext.flatMap(c => core_1.template(contents, c));
+                        return theContext.map(c => lodash_1.extend(c, { path })).flatMap(c => core_1.template(contents, c));
                     }
                 }
                 return Observable_1.Observable.of(contents);

@@ -35,7 +35,7 @@ exports.configure = (file, m = null) => {
         // Let's process the includes then
         .flatMap(TextFilters_1.process_includes(resolver))
         // Let's process the context
-        .flatMap(ContextFilter_1.context(file, resolver))
+        .flatMap(ContextFilter_1.context(file, resolver, { file }))
         // Then, let's reduce it into one string
         .reduce(ContextFilter_1.text(), "")
         // Parse it as YAML

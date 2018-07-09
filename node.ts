@@ -52,7 +52,7 @@ export const configure = (file:string, m:any = null):Observable<any> => {
     // Let's process the includes then
         .flatMap(process_includes(resolver))
     // Let's process the context
-        .flatMap(context(file, resolver))
+        .flatMap(context(file, resolver, {file}))
     // Then, let's reduce it into one string
         .reduce(text(), "")
     // Parse it as YAML
@@ -64,5 +64,5 @@ export const configure = (file:string, m:any = null):Observable<any> => {
     // Then process the aliases
         .map(process_composite())
     // Then process the objects
-        .flatMap(process_object(new NodeModuleLoader(m)));
+        .flatMap(process_object(new NodeModuleLoader(m)))
 }

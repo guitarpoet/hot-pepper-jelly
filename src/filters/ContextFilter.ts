@@ -41,8 +41,8 @@ export const context = (file:string, resolver:ResourceResolver, base:any = {}):a
     return (contents:string):Observable<string> => {
         let getThePath:Observable<string> = Observable.of(thePath);
         let setThePath:Observable<string> = resolver.resolve(file).map(p => (thePath = p) && p);
-        let setTheContext = (contextFile:string):Observable<any> => (resolver.getContents(contextFile, RESULT_TYPE_JSON));
-        return getThePath.concat(setThePath).first().flatMap(path => {
+        let setTheContext = (contextFile:string):Observable<any> => (resolver.getContents(contextFile, RESULT_TYPE_JSON)).map(o => extend(base, o));
+        return getThePath.concat(setThePath).filter(i => !!i).first().flatMap(path => {
             // Let's check the line if it is the context pattern
             let m = contents.match(CONTEXT_PATTERN);
             if(m) {
@@ -53,7 +53,7 @@ export const context = (file:string, resolver:ResourceResolver, base:any = {}):a
                 if(theContext) {
                     // We only handle when context exists
                     if(contents.match(PLACE_HOLDER_PATTERN)) {
-                        return theContext.flatMap(c => template(contents, c));
+                        return theContext.map(c => extend(c, {path})).flatMap(c => template(contents, c));
                     }
                 }
                 return Observable.of(contents);

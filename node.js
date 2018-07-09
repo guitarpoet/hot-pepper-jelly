@@ -15,7 +15,7 @@ __export(require("./src/node/NodeResourceResolver"));
 __export(require("./src/node/NodeModuleResolver"));
 // Let's add some short cuts
 require("rxjs/add/operator/map");
-require("rxjs/add/operator/mergeMap");
+require("rxjs/add/operator/concatMap");
 require("rxjs/add/observable/of");
 require("rxjs/add/observable/from");
 const core_1 = require("./core");
@@ -30,13 +30,13 @@ exports.configure = (file, m = null) => {
     // Let's read it first
     return resolver.getContents(file, core_1.RESULT_TYPE_TXT)
         // Let's process the define, if else and other things first
-        .flatMap(TextFilters_1.process_common())
+        .concatMap(TextFilters_1.process_common())
         // Let's split it into lines for future process
-        .flatMap(TextFilters_1.split())
+        .concatMap(TextFilters_1.split())
         // Let's process the includes then
-        .flatMap(TextFilters_1.process_includes(resolver))
+        .concatMap(TextFilters_1.process_includes(resolver))
         // Let's process the context
-        .flatMap(ContextFilter_1.context(file, resolver, { file, pwd: path_1.resolve(".") }))
+        .concatMap(ContextFilter_1.context(file, resolver, { file, pwd: path_1.resolve(".") }))
         // Then, let's reduce it into one string
         .reduce(ContextFilter_1.text(), "")
         // Parse it as YAML
@@ -48,6 +48,6 @@ exports.configure = (file, m = null) => {
         // Then process the aliases
         .map(ContextFilter_1.process_composite())
         // Then process the objects
-        .flatMap(ContextFilter_1.process_object(new NodeModuleLoader_1.NodeModuleLoader(m)));
+        .concatMap(ContextFilter_1.process_object(new NodeModuleLoader_1.NodeModuleLoader(m)));
 };
 //# sourceMappingURL=node.js.map

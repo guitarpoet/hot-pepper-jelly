@@ -13,7 +13,7 @@ export * from "./src/node/NodeModuleResolver";
 import { Observable } from "rxjs/Observable"
 // Let's add some short cuts
 import "rxjs/add/operator/map";
-import "rxjs/add/operator/mergeMap";
+import "rxjs/add/operator/concatMap";
 import "rxjs/add/observable/of";
 import "rxjs/add/observable/from";
 
@@ -48,13 +48,13 @@ export const configure = (file:string, m:any = null):Observable<any> => {
     // Let's read it first
     return resolver.getContents(file, RESULT_TYPE_TXT)
     // Let's process the define, if else and other things first
-        .flatMap(process_common())
+        .concatMap(process_common())
     // Let's split it into lines for future process
-        .flatMap(split())
+        .concatMap(split())
     // Let's process the includes then
-        .flatMap(process_includes(resolver))
+        .concatMap(process_includes(resolver))
     // Let's process the context
-        .flatMap(context(file, resolver, {file, pwd: resolve(".")}))
+        .concatMap(context(file, resolver, {file, pwd: resolve(".")}))
     // Then, let's reduce it into one string
         .reduce(text(), "")
     // Parse it as YAML
@@ -66,5 +66,5 @@ export const configure = (file:string, m:any = null):Observable<any> => {
     // Then process the aliases
         .map(process_composite())
     // Then process the objects
-        .flatMap(process_object(new NodeModuleLoader(m)))
+        .concatMap(process_object(new NodeModuleLoader(m)))
 }

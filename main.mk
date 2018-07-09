@@ -9,3 +9,8 @@ debug: $(ALL_DIST)
 clean:
 	$(SILENT) $(RM) $(ALL_DIST)
 .PHONY: clean
+
+config_test: $(ALL_DIST)
+	$(SILENT) NODEPATH=.:src:spec:node_modules node tests/config_test.js
+.PHONY: config_test
+

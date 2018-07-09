@@ -41,11 +41,11 @@ exports.configure = (file, m = null) => {
         // Parse it as YAML
         .map(ContextFilter_1.format())
         // Then process the base
-        .flatMap(ContextFilter_1.process_base())
+        .map(ContextFilter_1.process_base())
         // Then process the aliases
-        .flatMap(ContextFilter_1.process_alias())
+        .map(ContextFilter_1.process_alias())
         // Then process the aliases
-        .flatMap(ContextFilter_1.process_composite())
+        .map(ContextFilter_1.process_composite())
         // Then process the objects
         .flatMap(ContextFilter_1.process_object(new NodeModuleLoader_1.NodeModuleLoader(m)));
 };

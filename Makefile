@@ -87,6 +87,10 @@ ssh_exec = $(shell $(SSH) root@$(1) $(2))
 #
 #===============================================================================
 
+config_test: $(ALL_DIST)
+	$(SILENT) NODEPATH=.:src:spec:node_modules node tests/config_test.js
+.PHONY: config_test
+
 test: $(ALL_DIST)
 	$(SILENT) NODEPATH=.:src:spec:node_modules $(JASMINE)
 .PHONY: test

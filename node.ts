@@ -22,47 +22,47 @@ import { NodeResourceResolver } from "./src/node/NodeResourceResolver";
 import { NodeModuleLoader } from "./src/node/NodeModuleLoader";
 
 import {
-	split,
-	process_includes,
-	process_common
+    split,
+    process_includes,
+    process_common
 } from "./src/filters/TextFilters";
 
 import {
-	format,
+    format,
     context,
-	text,
-	process_base,
-	process_alias,
-	process_composite,
-	process_object
+    text,
+    process_base,
+    process_alias,
+    process_composite,
+    process_object
 } from "./src/filters/ContextFilter";
 
 import {
 } from "./src/filters/FormatFilter";
 
 export const configure = (file:string, m:any = null):Observable<any> => {
-	// Construct the resuolver first
-	let resolver = new NodeResourceResolver(m);
-	// Let's read it first
-	return resolver.getContents(file, RESULT_TYPE_TXT)
-	// Let's process the define, if else and other things first
-		.flatMap(process_common())
-	// Let's split it into lines for future process
-		.flatMap(split())
-	// Let's process the includes then
-		.flatMap(process_includes(resolver))
-	// Let's process the context
-		.flatMap(context(file, resolver))
-	// Then, let's reduce it into one string
-		.reduce(text(), "")
-	// Parse it as YAML
+    // Construct the resuolver first
+    let resolver = new NodeResourceResolver(m);
+    // Let's read it first
+    return resolver.getContents(file, RESULT_TYPE_TXT)
+    // Let's process the define, if else and other things first
+        .flatMap(process_common())
+    // Let's split it into lines for future process
+        .flatMap(split())
+    // Let's process the includes then
+        .flatMap(process_includes(resolver))
+    // Let's process the context
+        .flatMap(context(file, resolver))
+    // Then, let's reduce it into one string
+        .reduce(text(), "")
+    // Parse it as YAML
         .map(format())
     // Then process the base
-        .flatMap(process_base())
+        .map(process_base())
     // Then process the aliases
-        .flatMap(process_alias())
+        .map(process_alias())
     // Then process the aliases
-        .flatMap(process_composite())
+        .map(process_composite())
     // Then process the objects
         .flatMap(process_object(new NodeModuleLoader(m)));
 }

@@ -19,7 +19,7 @@ import "rxjs/add/operator/concat";
 import "rxjs/add/operator/first";
 import "rxjs/add/operator/filter";
 import { template } from "../core";
-import { isObject, isArray, isFunction, isString, extend } from "lodash";
+import { isObject, isArray, isFunction, isString, extend, get } from "lodash";
 import { AbstractModuleLoader } from "../ModuleLoader";
 
 const ALIAS_PATTERN = /^\~([a-zA-Z_\-]+)/;
@@ -302,7 +302,7 @@ const constructObj = (module:any, name:string, data:any, loader) => {
         let func = m;
         if($name) {
             // Let's use the property instead
-            func = m[$name];
+            func = get(m, $name);
         }
         if(func && isFunction(func)) {
             // Let's add the clean support for the data, so that you can remove the meta informations that you don't want

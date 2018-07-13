@@ -1,8 +1,7 @@
+a: Hello World
+b: Goodbye World
 #define c 3
 #context ../package.json
 c: Hello {{name}} - {{version}}
 d: {{file}}
 e: {{path}}
-f: {{pwd}}
-a: Hello World
-b: Goodbye World

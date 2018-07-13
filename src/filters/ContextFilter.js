@@ -274,7 +274,7 @@ const constructObj = (module, name, data, loader) => {
         let func = m;
         if ($name) {
             // Let's use the property instead
-            func = m[$name];
+            func = lodash_1.get(m, $name);
         }
         if (func && lodash_1.isFunction(func)) {
             // Let's add the clean support for the data, so that you can remove the meta informations that you don't want

@@ -27,7 +27,7 @@ import {
     process_common
 } from "./src/filters/TextFilters";
 
-import { resolve } from "path";
+import { resolve, dirname } from "path";
 
 import {
     format,
@@ -54,7 +54,7 @@ export const configure = (file:string, m:any = null):Observable<any> => {
     // Let's process the includes then
         .concatMap(process_includes(resolver))
     // Let's process the context
-        .concatMap(context(file, resolver, {file, pwd: resolve(".")}))
+        .concatMap(context(file, resolver, {file,  dir: resolve(dirname(file)), pwd: resolve(".")}))
     // Then, let's reduce it into one string
         .reduce(text(), "")
     // Parse it as YAML

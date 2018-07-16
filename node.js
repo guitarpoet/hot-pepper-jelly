@@ -36,7 +36,7 @@ exports.configure = (file, m = null) => {
         // Let's process the includes then
         .concatMap(TextFilters_1.process_includes(resolver))
         // Let's process the context
-        .concatMap(ContextFilter_1.context(file, resolver, { file, pwd: path_1.resolve(".") }))
+        .concatMap(ContextFilter_1.context(file, resolver, { file, dir: path_1.resolve(path_1.dirname(file)), pwd: path_1.resolve(".") }))
         // Then, let's reduce it into one string
         .reduce(ContextFilter_1.text(), "")
         // Parse it as YAML

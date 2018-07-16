@@ -1,6 +1,6 @@
 {
     "name": "hot-pepper-jelly",
-    "version": "2.0.5",
+    "version": "2.0.7",
     "description": "The es6 based hot reload support.",
     "main": "src/index.js",
     "scripts": {

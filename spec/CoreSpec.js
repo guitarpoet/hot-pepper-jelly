@@ -39,26 +39,23 @@ require('source-map-support')
 const {
     map,
     flatMap,
+    reduce,
     concatMap
 } = require("rxjs/operators");
-
-require("rxjs/add/operator/map");
-require("rxjs/add/operator/mergeMap");
-require("rxjs/add/operator/reduce");
-require("rxjs/add/observable/of");
-require("rxjs/add/observable/from");
 
 describe("core function test", () => {
     it("test macro engine filters", (done) => {
         let resolver = new NodeResourceResolver(module);
 
         resolver.getContents("./m1.txt", "text")
-            .flatMap(process_common())
-            .flatMap(split())
-            .flatMap(process_includes(resolver))
-            .flatMap(context("./m1.txt", resolver))
-            .reduce(text(), "")
-            .map(format())
+            .pipe(
+                flatMap(process_common()),
+                flatMap(split()),
+                flatMap(process_includes(resolver)),
+                flatMap(context("./m1.txt", resolver)),
+                reduce(text(), ""),
+                map(format())
+            )
             .subscribe((data) => {
                 expect(process.env.a)
                     .toBeTruthy();
@@ -126,7 +123,9 @@ describe("core function test", () => {
         enable_features({
                 hello: "world"
             })
-            .flatMap(() => features_enabled("hello"))
+            .pipe(
+                flatMap(() => features_enabled("hello"))
+            )
             .subscribe(data => {
                 expect(data)
                     .toBeTruthy();
@@ -135,7 +134,9 @@ describe("core function test", () => {
         enable_features({
                 hello: "world"
             })
-            .flatMap(() => features_enabled("hello", "not_exists"))
+            .pipe(
+                flatMap(() => features_enabled("hello", "not_exists"))
+            )
             .subscribe(data => {
                 expect(data)
                     .toBeFalsy();

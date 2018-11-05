@@ -31,11 +31,14 @@ describe("context filter test", () => {
 
         a = process_base()(a);
         // Extend
-        expect(a.b == 2).toBeTruthy();
+        expect(a.b == 2)
+            .toBeTruthy();
         // Override
-        expect(a.a == 3).toBeTruthy();
+        expect(a.a == 3)
+            .toBeTruthy();
         // The array will be supported
-        expect(a.c[0].type == 1).toBeTruthy();
+        expect(a.c[0].type == 1)
+            .toBeTruthy();
     })
 
     it("process alias test", () => {
@@ -47,7 +50,8 @@ describe("context filter test", () => {
         }
 
         a = process_alias(aliases)(a);
-        expect(a.ThisNameIsTooLong).toBeTruthy();
+        expect(a.ThisNameIsTooLong)
+            .toBeTruthy();
     })
 
     it("process composite test", () => {
@@ -56,7 +60,8 @@ describe("context filter test", () => {
         }
 
         a = process_composite()(a);
-        expect(a.a.b.c.d == 1).toBeTruthy();
+        expect(a.a.b.c.d == 1)
+            .toBeTruthy();
     })
 
     it("process object test", () => {
@@ -80,7 +85,7 @@ describe("context filter test", () => {
             }]
         }
 
-        process_object(new NodeModuleLoader(module))(a).subscribe(a => {
-        });
+        process_object(new NodeModuleLoader(module))(a)
+            .subscribe(a => {});
     })
 });

@@ -8,11 +8,9 @@
  */
 Object.defineProperty(exports, "__esModule", { value: true });
 const interfaces_1 = require("../interfaces");
-const Observable_1 = require("rxjs/Observable");
-require("rxjs/add/observable/of");
-require("rxjs/add/operator/mergeMap");
-require("rxjs/add/operator/map");
-exports.resolve = (request, mod = null) => Observable_1.Observable.create(obs => {
+const rxjs_1 = require("rxjs");
+const operators_1 = require("rxjs/operators");
+exports.resolve = (request, mod = null) => rxjs_1.Observable.create(obs => {
     // Get the module out
     const Module = require("module");
     if (mod == null) {
@@ -32,7 +30,7 @@ class NodeResourceResolver {
         this.mod = mod;
     }
     resolverType() {
-        return Observable_1.Observable.create(obs => {
+        return rxjs_1.Observable.create(obs => {
             obs.next(interfaces_1.TYPE_NODE);
         });
     }
@@ -41,9 +39,9 @@ class NodeResourceResolver {
         return exports.resolve(path, this.mod);
     }
     getContentsInner(path, mod = null) {
-        return this.resolve(path).flatMap(p => {
+        return this.resolve(path).pipe(operators_1.flatMap(p => {
             if (p) {
-                return Observable_1.Observable.create(obs => {
+                return rxjs_1.Observable.create(obs => {
                     const fs = require("fs");
                     // We only need to read the file if the path is resolved
                     fs.readFile(p, "utf-8", (err, data) => {
@@ -65,12 +63,12 @@ class NodeResourceResolver {
                 });
             }
             else {
-                return Observable_1.Observable.of(null);
+                return rxjs_1.of(null);
             }
-        });
+        }));
     }
     getContents(path, resultType) {
-        return this.getContentsInner(path, this.mod).map(data => interfaces_1.transformResult(data, resultType));
+        return this.getContentsInner(path, this.mod).pipe(operators_1.map(data => interfaces_1.transformResult(data, resultType)));
     }
 }
 exports.NodeResourceResolver = NodeResourceResolver;

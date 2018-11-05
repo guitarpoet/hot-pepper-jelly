@@ -7,9 +7,10 @@
  * @date Sat Jul  7 15:58:27 2018
  */
 Object.defineProperty(exports, "__esModule", { value: true });
-const Observable_1 = require("rxjs/Observable");
+const rxjs_1 = require("rxjs");
 const ModuleLoader_1 = require("../ModuleLoader");
 const NodeResourceResolver_1 = require("./NodeResourceResolver");
+const operators_1 = require("rxjs/operators");
 const topMostModule = () => {
     let topmost = module;
     while (topmost.parent) {
@@ -34,7 +35,7 @@ class NodeModuleLoader extends ModuleLoader_1.AbstractModuleLoader {
             delete require.cache[m.id];
         }
         else {
-            return Observable_1.Observable.of(false);
+            return rxjs_1.of(false);
         }
         // Remove cached paths to the module.
         // Thanks to @bentael for pointing this out.
@@ -44,7 +45,7 @@ class NodeModuleLoader extends ModuleLoader_1.AbstractModuleLoader {
                 delete a._pathCache[cacheKey];
             }
         });
-        return Observable_1.Observable.of(true);
+        return rxjs_1.of(true);
     }
     cache(key = null) {
         if (key) {
@@ -54,13 +55,13 @@ class NodeModuleLoader extends ModuleLoader_1.AbstractModuleLoader {
     }
     _load(mod) {
         // Let's resolve it first
-        return this.resolve(mod).map(r => {
+        return this.resolve(mod).pipe(operators_1.map(r => {
             if (r) {
                 // If resolved
                 return require(r);
             }
             return null;
-        });
+        }));
     }
     resolve(mod) {
         return this.resolver.resolve(mod);

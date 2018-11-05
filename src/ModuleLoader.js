@@ -9,10 +9,8 @@
  */
 Object.defineProperty(exports, "__esModule", { value: true });
 const core_1 = require("./core");
-const Observable_1 = require("rxjs/Observable");
-require("rxjs/add/observable/of");
-require("rxjs/add/operator/mergeMap");
-require("rxjs/add/operator/concat");
+const of_1 = require("rxjs/observable/of");
+const operators_1 = require("rxjs/operators");
 const lodash_1 = require("lodash");
 class AbstractModuleLoader {
     constructor() {
@@ -27,28 +25,27 @@ class AbstractModuleLoader {
     }
     load(mod) {
         // Let's resolve it first
-        return this.resolve(mod)
-            .flatMap(r => {
+        return this.resolve(mod).pipe(operators_1.flatMap(r => {
             if (r) {
                 // Use the cache one if it is already there
                 let c = this.proxies[r];
                 if (c) {
-                    return Observable_1.Observable.of(c);
+                    return of_1.of(c);
                 }
-                return core_1.features_enabled("hotload").flatMap(enabled => {
+                return core_1.features_enabled("hotload").pipe(operators_1.flatMap(enabled => {
                     let ret = this._load(r);
                     if (enabled) {
                         // Store the original object into the local object map
-                        ret = ret.map(m => this.origins[r] = m && m)
-                            // Will try proxy it when loaded
-                            .flatMap(obj => this.proxy(obj, r));
+                        ret = ret.pipe(operators_1.map(m => this.origins[r] = m && m), 
+                        // Will try proxy it when loaded
+                        operators_1.flatMap(obj => this.proxy(obj, r)));
                     }
                     return ret;
-                });
+                }));
             }
             // Since it is not resolved, let's just return null
-            return Observable_1.Observable.of(null);
-        });
+            return of_1.of(null);
+        }));
     }
     /**
      * Apply the proxy if needed
@@ -56,7 +53,7 @@ class AbstractModuleLoader {
     proxy(obj, path) {
         let proxy = new Proxy(obj, new ProxyHandler(this, path));
         this.proxies[path] = proxy;
-        return Observable_1.Observable.of(proxy);
+        return of_1.of(proxy);
     }
     /**
      * Purge the module, it is platform dependent
@@ -66,16 +63,16 @@ class AbstractModuleLoader {
         return null;
     }
     reload(mod) {
-        return this.resolve(mod).flatMap(r => r ? this.purge(r) : Observable_1.Observable.of(false)).flatMap(b => {
+        return this.resolve(mod).pipe(operators_1.flatMap(r => r ? this.purge(r) : of_1.of(false)), operators_1.flatMap(b => {
             if (b) {
                 // Only load if it is a valid module
                 return this.load(mod);
             }
-            return Observable_1.Observable.of(null);
-        });
+            return of_1.of(null);
+        }));
     }
     loaded(mod) {
-        return this.find(mod).map(r => !!r);
+        return this.find(mod).pipe(operators_1.map(r => !!r));
     }
     /**
      * The function to access the cached result, if the key is null, then return the whole cache, this is platform dependent
@@ -94,7 +91,7 @@ class AbstractModuleLoader {
      */
     find(mod) {
         // Let's resolve it first
-        return this.resolve(mod).map(r => {
+        return this.resolve(mod).pipe(operators_1.map(r => {
             if (r) {
                 // If resolved, let's check if it is in the cache
                 let m = this.cache(r);
@@ -103,7 +100,7 @@ class AbstractModuleLoader {
                 }
             }
             return null;
-        });
+        }));
     }
     /**
      * Resolve the module's real path, this is platform dependent

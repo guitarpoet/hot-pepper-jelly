@@ -2,6 +2,10 @@ const {
     NodeModuleLoader
 } = require("../src/node/NodeModuleLoader");
 const {
+    concat,
+    reduce
+} = require("rxjs/operators");
+const {
     enable_features
 } = require("../src/core");
 
@@ -68,8 +72,10 @@ describe("node module loader test", () => {
             date
         } = require("./sample");
         loader.reload("./sample")
-            .concat(loader.reload("./sample"))
-            .reduce((a, i) => a.push(i) && a, [])
+            .pipe(
+                concat(loader.reload("./sample")),
+                reduce((a, i) => a.push(i) && a, [])
+            )
             .subscribe(data => {
                 let orig = data[0];
                 let now = data[1];

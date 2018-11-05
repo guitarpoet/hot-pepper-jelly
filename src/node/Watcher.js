@@ -10,9 +10,8 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const fs = require("fs");
 const path = require("path");
 const lodash_1 = require("lodash");
-const Observable_1 = require("rxjs/Observable");
-require("rxjs/add/observable/from");
-require("rxjs/add/operator/mergeMap");
+const rxjs_1 = require("rxjs");
+const operators_1 = require("rxjs/operators");
 /**
  * The watcher will watch folder and file's change
  */
@@ -23,8 +22,8 @@ class Watcher {
     }
     watch(...files) {
         if (!this.w) {
-            this.w = Observable_1.Observable.from(files).flatMap(f => {
-                return Observable_1.Observable.create(obs => {
+            this.w = rxjs_1.from(files).pipe(operators_1.flatMap(f => {
+                return rxjs_1.Observable.create(obs => {
                     this.handle = obs;
                     this.watchers.push(fs.watch(f, (eventType, filename) => {
                         if (filename) {
@@ -35,7 +34,7 @@ class Watcher {
                         }
                     }));
                 });
-            });
+            }));
         }
         return this.w;
     }

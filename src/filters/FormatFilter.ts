@@ -6,7 +6,7 @@
  * @date Fri Jul  6 15:08:05 2018
  */
 
-export const json = ():any => {
-	return (texts:Array<string>, contents:string) => {
-	}
+export const json = (): any => {
+    return (texts: Array<string>, contents: string) => {
+    }
 }

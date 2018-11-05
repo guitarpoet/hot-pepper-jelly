@@ -8,9 +8,7 @@
  */
 Object.defineProperty(exports, "__esModule", { value: true });
 const rxjs_1 = require("rxjs");
-require("rxjs/add/observable/of");
-require("rxjs/add/observable/from");
-require("rxjs/add/operator/mergeMap");
+const operators_1 = require("rxjs/operators");
 const interfaces_1 = require("../interfaces");
 const lodash_1 = require("lodash");
 const INCLUDE_PATTERN = /^[ \t]*#include ([a-zA-Z0-9\\._\/]+)/;
@@ -34,10 +32,10 @@ exports.split = (sep = "\n") => {
     return (contents) => {
         if (contents) {
             let c = contents;
-            return rxjs_1.Observable.from(c.split(sep));
+            return rxjs_1.from(c.split(sep));
         }
         else {
-            return rxjs_1.Observable.from([]);
+            return rxjs_1.from([]);
         }
     };
 };
@@ -47,18 +45,18 @@ exports.process_includes = (resolver) => {
             let m = contents.match(INCLUDE_PATTERN);
             if (m) {
                 // Get the resource
-                return resolver.getContents(m[1], interfaces_1.RESULT_TYPE_TXT)
-                    // Then process it
-                    .flatMap(exports.process_common())
-                    // Then split it
-                    .flatMap(exports.split())
-                    // And process the includes of it again
-                    .flatMap(exports.process_includes(resolver));
+                return resolver.getContents(m[1], interfaces_1.RESULT_TYPE_TXT).pipe(
+                // Then process it
+                operators_1.flatMap(exports.process_common()), 
+                // Then split it
+                operators_1.flatMap(exports.split()), 
+                // And process the includes of it again
+                operators_1.flatMap(exports.process_includes(resolver)));
             }
-            return rxjs_1.Observable.of(contents);
+            return rxjs_1.of(contents);
         }
         else {
-            return rxjs_1.Observable.from([]);
+            return rxjs_1.from([]);
         }
     };
 };
@@ -286,10 +284,10 @@ exports.process_common = () => {
             if (stack.length || !!currentBlock) {
                 throw new Error("The text didn't have #if and the #endif match, you should check the text!");
             }
-            return rxjs_1.Observable.from(ret);
+            return rxjs_1.from(ret);
         }
         else {
-            return rxjs_1.Observable.from([]);
+            return rxjs_1.from([]);
         }
     };
 };

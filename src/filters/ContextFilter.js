@@ -8,17 +8,8 @@
  */
 Object.defineProperty(exports, "__esModule", { value: true });
 const interfaces_1 = require("../interfaces");
-const Observable_1 = require("rxjs/Observable");
-require("rxjs/add/observable/of");
-require("rxjs/add/observable/forkJoin");
-require("rxjs/add/observable/from");
-require("rxjs/add/observable/defer");
-require("rxjs/add/operator/map");
-require("rxjs/add/operator/reduce");
-require("rxjs/add/operator/mergeMap");
-require("rxjs/add/operator/concat");
-require("rxjs/add/operator/first");
-require("rxjs/add/operator/filter");
+const rxjs_1 = require("rxjs");
+const operators_1 = require("rxjs/operators");
 const core_1 = require("../core");
 const lodash_1 = require("lodash");
 const ALIAS_PATTERN = /^\~([a-zA-Z_\-]+)/;
@@ -35,27 +26,29 @@ exports.context = (file, resolver, base = {}) => {
     let thePath = null;
     let theContext = null;
     return (contents) => {
-        let getThePath = Observable_1.Observable.of(thePath);
-        let setThePath = resolver.resolve(file).map(p => (thePath = p) && p);
-        let setTheContext = (contextFile) => (resolver.getContents(contextFile, interfaces_1.RESULT_TYPE_JSON)).map(o => lodash_1.extend(base, o));
-        return getThePath.concat(setThePath).filter(i => !!i).first().flatMap(path => {
+        let getThePath = rxjs_1.of(thePath);
+        let setThePath = resolver.resolve(file).pipe(operators_1.map(p => (thePath = p) && p));
+        let setTheContext = (contextFile) => (resolver.getContents(contextFile, interfaces_1.RESULT_TYPE_JSON)).pipe(operators_1.map(o => lodash_1.extend(base, o)));
+        return core_1.tryFirst(getThePath, setTheContext).pipe(operators_1.flatMap(path => {
             // Let's check the line if it is the context pattern
             let m = contents.match(CONTEXT_PATTERN);
             if (m) {
                 // Then, let's get the json out
                 theContext = setTheContext(m[1]);
-                return Observable_1.Observable.of(null);
+                return rxjs_1.of(null);
             }
             else {
                 if (theContext) {
                     // We only handle when context exists
                     if (contents.match(PLACE_HOLDER_PATTERN)) {
-                        return theContext.map(c => lodash_1.extend(c, { path })).flatMap(c => core_1.template(contents, c));
+                        return theContext.pipe(operators_1.map(c => lodash_1.extend(c, { path })), operators_1.flatMap(c => core_1.template(contents, c)));
                     }
                 }
-                return Observable_1.Observable.of(contents);
+                return rxjs_1.of(contents);
             }
-        }).filter(i => i !== null); // And filter out the null values
+        }), 
+        // And filter out the null values
+        operators_1.filter(i => i !== null));
     };
 };
 exports.text_array = () => (texts, contents) => texts.push(contents) && texts;
@@ -186,14 +179,14 @@ const processComposites = (data) => {
 };
 const processObject = (data, loader) => {
     if (lodash_1.isArray(data)) {
-        return Observable_1.Observable.from(data)
-            // Let's process the innder object in the array
-            .flatMap(d => processObject(d, loader))
-            // Then reduce it to array
-            .reduce((a, i) => a.push(i) && a, []);
+        return rxjs_1.from(data).pipe(
+        // Let's process the innder object in the array
+        operators_1.flatMap(d => processObject(d, loader)), 
+        // Then reduce it to array
+        operators_1.reduce((a, i) => a.push(i) && a, []));
     }
     let observables = [];
-    let loadRequest = Observable_1.Observable.of(data);
+    let loadRequest = rxjs_1.of(data);
     if (lodash_1.isObject(data)) {
         // This is an object, let's process its fields first
         for (let p in data) {
@@ -208,8 +201,8 @@ const processObject = (data, loader) => {
                 if (lodash_1.isObject(v) || lodash_1.isArray(v)) {
                     // This value is already object or array, let's process it now
                     ((props) => {
-                        observables.push(processObject(v, loader) // Let's process it
-                            .map(v => data[props] = v && v)); // Then set it to the data
+                        observables.push(processObject(v, loader).pipe(// Let's process it
+                        operators_1.map(v => data[props] = v && v))); // Then set it to the data
                     })(p);
                 }
             }
@@ -218,7 +211,7 @@ const processObject = (data, loader) => {
         if (data.$type) {
             // Yes, we have the type inforamtion here
             let { $module, $name } = data;
-            loadRequest = Observable_1.Observable.defer(() => {
+            loadRequest = rxjs_1.defer(() => {
                 if (lodash_1.isString($module)) {
                     try {
                         // Let's check if we can really require the module first
@@ -226,14 +219,14 @@ const processObject = (data, loader) => {
                     }
                     catch (e) {
                         // We can't require this module, let's just return the data without processing it
-                        return Observable_1.Observable.of(module.exports);
+                        return rxjs_1.of(module.exports);
                     }
                 }
                 else {
                     // No module set, let's try it ourself
-                    return Observable_1.Observable.of(module.exports);
+                    return rxjs_1.of(module.exports);
                 }
-            }).map(m => {
+            }).pipe(operators_1.map(m => {
                 switch (data.$type) {
                     case "module": // It is a module
                         // Only process that if the module information is string
@@ -253,14 +246,14 @@ const processObject = (data, loader) => {
                         return data;
                 }
                 return data;
-            });
+            }));
         }
     }
     if (observables.length) {
         // Let's finish the tasks first
-        return Observable_1.Observable.forkJoin(observables)
-            // Then return the data itself
-            .flatMap(() => loadRequest);
+        return rxjs_1.forkJoin(observables).pipe(
+        // Then return the data itself
+        operators_1.flatMap(() => loadRequest));
     }
     else {
         // Return the data

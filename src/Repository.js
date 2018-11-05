@@ -9,10 +9,7 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 const lodash_1 = require("lodash");
 const rxjs_1 = require("rxjs");
-require("rxjs/add/observable/of");
-require("rxjs/add/operator/map");
-require("rxjs/add/operator/mergeMap");
-require("rxjs/add/operator/merge");
+const operators_1 = require("rxjs/operators");
 /**
  * This is a simple registry which will use the on site memory to store the data
  */
@@ -41,10 +38,10 @@ class SimpleRegistry {
                 }
             });
         }
-        return rxjs_1.Observable.of(this);
+        return rxjs_1.of(this);
     }
     isExpired() {
-        return rxjs_1.Observable.of(this.expiredDate && this.expiredDate.getTime() <= new Date().getTime());
+        return rxjs_1.of(this.expiredDate && this.expiredDate.getTime() <= new Date().getTime());
     }
     watch() {
         // Only initialize the subject when there is some watching
@@ -54,7 +51,7 @@ class SimpleRegistry {
         return this.subject;
     }
     meta() {
-        return rxjs_1.Observable.of({
+        return rxjs_1.of({
             repository: this.repository,
             createDate: this.createDate,
             modifyDate: this.modifyDate,
@@ -63,8 +60,7 @@ class SimpleRegistry {
         });
     }
     get() {
-        return this.isExpired()
-            .map(e => e ? null : this.value);
+        return this.isExpired().pipe(operators_1.map(e => e ? null : this.value));
     }
 }
 exports.SimpleRegistry = SimpleRegistry;
@@ -81,7 +77,7 @@ class SimpleRepository {
             r = new SimpleRegistry(name, null, this, null);
             this._registries[name] = r;
         }
-        return rxjs_1.Observable.of(r);
+        return rxjs_1.of(r);
     }
     removeRegistry(name) {
         let r = this._registries[name];
@@ -89,7 +85,7 @@ class SimpleRepository {
             // Let's remove it now
             delete this._registries[name];
         }
-        return rxjs_1.Observable.of(r);
+        return rxjs_1.of(r);
     }
     setAll(map) {
         let obs = null;
@@ -98,23 +94,23 @@ class SimpleRepository {
                 obs = this.set(p, map[p]);
             }
             else {
-                obs = obs.flatMap(reg => reg.set(p, map[p]));
+                obs = obs.pipe(operators_1.flatMap(reg => reg.set(p, map[p])));
             }
         }
         return obs;
     }
     set(name, value) {
-        return this.getRegistry(name, true).flatMap(r => {
-            return r.update(value).map(() => this);
-        });
+        return this.getRegistry(name, true).pipe(operators_1.flatMap(r => {
+            return r.update(value);
+        }), operators_1.map(() => this));
     }
     get(name) {
-        return this.getRegistry(name, true).flatMap(r => {
+        return this.getRegistry(name, true).pipe(operators_1.flatMap(r => {
             return r.get();
-        });
+        }));
     }
     keys() {
-        return rxjs_1.Observable.of(lodash_1.keys(this._registries));
+        return rxjs_1.of(lodash_1.keys(this._registries));
     }
     watch(name) {
         let arr = null;
@@ -127,13 +123,13 @@ class SimpleRepository {
         let obs = null;
         for (let str of arr) {
             if (obs) {
-                obs = obs.merge(this.getRegistry(str, true));
+                obs = obs.pipe(operators_1.merge(this.getRegistry(str, true)));
             }
             else {
                 obs = this.getRegistry(str, true);
             }
         }
-        return obs.map(r => r.watch());
+        return obs.pipe(operators_1.map(r => r.watch()));
     }
 }
 exports.SimpleRepository = SimpleRepository;

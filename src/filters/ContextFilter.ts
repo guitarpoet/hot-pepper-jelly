@@ -8,7 +8,7 @@
 
 import { ResourceResolver, RESULT_TYPE_JSON, RESULT_TYPE_YAML, transformResult } from "../interfaces";
 import { Observable, of, forkJoin, from, defer } from "rxjs"
-import { map, reduce, mergeMap, filter, flatMap } from "rxjs/operators";
+import { map, reduce, filter, flatMap } from "rxjs/operators";
 import { template, tryFirst } from "../core";
 import { isObject, isArray, isFunction, isString, extend, get } from "lodash";
 import { AbstractModuleLoader } from "../ModuleLoader";
@@ -33,7 +33,7 @@ export const context = (file: string, resolver: ResourceResolver, base: any = {}
         let getThePath: Observable<string> = of(thePath);
         let setThePath: Observable<string> = resolver.resolve(file).pipe(map(p => (thePath = p) && p));
         let setTheContext = (contextFile: string): Observable<any> => (resolver.getContents(contextFile, RESULT_TYPE_JSON)).pipe(map(o => extend(base, o)));
-        return tryFirst(getThePath, setTheContext).pipe(
+        return tryFirst(getThePath, setThePath).pipe(
             flatMap(path => {
                 // Let's check the line if it is the context pattern
                 let m = contents.match(CONTEXT_PATTERN);

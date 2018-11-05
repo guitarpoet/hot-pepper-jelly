@@ -14,11 +14,7 @@ __export(require("./src/node/Watcher"));
 __export(require("./src/node/NodeResourceResolver"));
 __export(require("./src/node/NodeModuleResolver"));
 __export(require("./src/node/NodeModuleLoader"));
-// Let's add some short cuts
-require("rxjs/add/operator/map");
-require("rxjs/add/operator/concatMap");
-require("rxjs/add/observable/of");
-require("rxjs/add/observable/from");
+const operators_1 = require("rxjs/operators");
 const core_1 = require("./core");
 const NodeResourceResolver_1 = require("./src/node/NodeResourceResolver");
 const NodeModuleLoader_1 = require("./src/node/NodeModuleLoader");
@@ -29,26 +25,26 @@ exports.configure = (file, m = null) => {
     // Construct the resuolver first
     let resolver = new NodeResourceResolver_1.NodeResourceResolver(m);
     // Let's read it first
-    return resolver.getContents(file, core_1.RESULT_TYPE_TXT)
-        // Let's process the define, if else and other things first
-        .concatMap(TextFilters_1.process_common())
-        // Let's split it into lines for future process
-        .concatMap(TextFilters_1.split())
-        // Let's process the includes then
-        .concatMap(TextFilters_1.process_includes(resolver))
-        // Let's process the context
-        .concatMap(ContextFilter_1.context(file, resolver, { file, dir: path_1.resolve(path_1.dirname(file)), pwd: path_1.resolve(".") }))
-        // Then, let's reduce it into one string
-        .reduce(ContextFilter_1.text(), "")
-        // Parse it as YAML
-        .map(ContextFilter_1.format())
-        // Then process the base
-        .map(ContextFilter_1.process_base())
-        // Then process the aliases
-        .map(ContextFilter_1.process_alias())
-        // Then process the aliases
-        .map(ContextFilter_1.process_composite())
-        // Then process the objects
-        .concatMap(ContextFilter_1.process_object(new NodeModuleLoader_1.NodeModuleLoader(m)));
+    return resolver.getContents(file, core_1.RESULT_TYPE_TXT).pipe(
+    // Let's process the define, if else and other things first
+    operators_1.concatMap(TextFilters_1.process_common()), 
+    // Let's split it into lines for future process
+    operators_1.concatMap(TextFilters_1.split()), 
+    // Let's process the includes then
+    operators_1.concatMap(TextFilters_1.process_includes(resolver)), 
+    // Let's process the context
+    operators_1.concatMap(ContextFilter_1.context(file, resolver, { file, dir: path_1.resolve(path_1.dirname(file)), pwd: path_1.resolve(".") })), 
+    // Then, let's reduce it into one string
+    operators_1.reduce(ContextFilter_1.text(), ""), 
+    // Parse it as YAML
+    operators_1.map(ContextFilter_1.format()), 
+    // Then process the base
+    operators_1.map(ContextFilter_1.process_base()), 
+    // Then process the aliases
+    operators_1.map(ContextFilter_1.process_alias()), 
+    // Then process the aliases
+    operators_1.map(ContextFilter_1.process_composite()), 
+    // Then process the objects
+    operators_1.concatMap(ContextFilter_1.process_object(new NodeModuleLoader_1.NodeModuleLoader(m))));
 };
 //# sourceMappingURL=node.js.map

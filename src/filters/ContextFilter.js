@@ -29,7 +29,7 @@ exports.context = (file, resolver, base = {}) => {
         let getThePath = rxjs_1.of(thePath);
         let setThePath = resolver.resolve(file).pipe(operators_1.map(p => (thePath = p) && p));
         let setTheContext = (contextFile) => (resolver.getContents(contextFile, interfaces_1.RESULT_TYPE_JSON)).pipe(operators_1.map(o => lodash_1.extend(base, o)));
-        return core_1.tryFirst(getThePath, setTheContext).pipe(operators_1.flatMap(path => {
+        return core_1.tryFirst(getThePath, setThePath).pipe(operators_1.flatMap(path => {
             // Let's check the line if it is the context pattern
             let m = contents.match(CONTEXT_PATTERN);
             if (m) {

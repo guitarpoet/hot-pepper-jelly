@@ -11,12 +11,8 @@ export * from "./src/node/NodeResourceResolver";
 export * from "./src/node/NodeModuleResolver";
 export * from "./src/node/NodeModuleLoader"
 
-import { Observable } from "rxjs/Observable"
-// Let's add some short cuts
-import "rxjs/add/operator/map";
-import "rxjs/add/operator/concatMap";
-import "rxjs/add/observable/of";
-import "rxjs/add/observable/from";
+import { Observable } from "rxjs"
+import { map, concatMap, reduce } from "rxjs/operators";
 
 import { RESULT_TYPE_TXT } from "./core";
 import { NodeResourceResolver } from "./src/node/NodeResourceResolver";
@@ -43,29 +39,30 @@ import {
 import {
 } from "./src/filters/FormatFilter";
 
-export const configure = (file:string, m:any = null):Observable<any> => {
+export const configure = (file: string, m: any = null): Observable<any> => {
     // Construct the resuolver first
     let resolver = new NodeResourceResolver(m);
     // Let's read it first
-    return resolver.getContents(file, RESULT_TYPE_TXT)
-    // Let's process the define, if else and other things first
-        .concatMap(process_common())
-    // Let's split it into lines for future process
-        .concatMap(split())
-    // Let's process the includes then
-        .concatMap(process_includes(resolver))
-    // Let's process the context
-        .concatMap(context(file, resolver, {file,  dir: resolve(dirname(file)), pwd: resolve(".")}))
-    // Then, let's reduce it into one string
-        .reduce(text(), "")
-    // Parse it as YAML
-        .map(format())
-    // Then process the base
-        .map(process_base())
-    // Then process the aliases
-        .map(process_alias())
-    // Then process the aliases
-        .map(process_composite())
-    // Then process the objects
-        .concatMap(process_object(new NodeModuleLoader(m)))
+    return resolver.getContents(file, RESULT_TYPE_TXT).pipe(
+        // Let's process the define, if else and other things first
+        concatMap(process_common()),
+        // Let's split it into lines for future process
+        concatMap(split()),
+        // Let's process the includes then
+        concatMap(process_includes(resolver)),
+        // Let's process the context
+        concatMap(context(file, resolver, { file, dir: resolve(dirname(file)), pwd: resolve(".") })),
+        // Then, let's reduce it into one string
+        reduce(text(), ""),
+        // Parse it as YAML
+        map(format()),
+        // Then process the base
+        map(process_base()),
+        // Then process the aliases
+        map(process_alias()),
+        // Then process the aliases
+        map(process_composite()),
+        // Then process the objects
+        concatMap(process_object(new NodeModuleLoader(m)))
+    );
 }

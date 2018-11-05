@@ -33,7 +33,14 @@ const {
 } = require("rxjs/Observable");
 
 // Add the source map support for testing
-require('source-map-support').install();
+require('source-map-support')
+    .install();
+
+const {
+    map,
+    flatMap,
+    concatMap
+} = require("rxjs/operators");
 
 require("rxjs/add/operator/map");
 require("rxjs/add/operator/mergeMap");
@@ -53,56 +60,85 @@ describe("core function test", () => {
             .reduce(text(), "")
             .map(format())
             .subscribe((data) => {
-                expect(process.env.a).toBeTruthy();
-                expect(process.env.b == 2).toBeTruthy();
-                expect(process.env.c == 3).toBeTruthy();
-                expect(data.a).toEqual("Hello World");
+                expect(process.env.a)
+                    .toBeTruthy();
+                expect(process.env.b == 2)
+                    .toBeTruthy();
+                expect(process.env.c == 3)
+                    .toBeTruthy();
+                expect(data.a)
+                    .toEqual("Hello World");
                 done();
             });
     });
 
     it("is node test", () => {
-        isNode.subscribe(node => expect(node).toBeTruthy());
+        isNode.subscribe(node => expect(node)
+            .toBeTruthy());
     });
 
     it("template test", () => {
         template("Hello {{name}}", {
-            name: "world"
-        }).subscribe(greetings => expect(greetings).toEqual("Hello world"));
+                name: "world"
+            })
+            .subscribe(greetings => expect(greetings)
+                .toEqual("Hello world"));
     });
 
     it("registry test", (done) => {
         let theReg = null;
-        registry("hello").subscribe(reg => theReg = reg);
-        registry("hello").subscribe(reg => expect(theReg === reg).toBeTruthy());
-        global_registry("hello", "world").subscribe((n1) => {
-            global_registry("hello").subscribe((n2) => {
-                expect(n1).toEqual(n2);
-                done();
-            })
-        })
+        registry("abc")
+            .pipe(
+                map(reg => {
+                    theReg = reg;
+                    return theReg;
+                }),
+                concatMap(() => registry("abc")),
+                map(reg => {
+                    expect(theReg === reg)
+                        .toBeTruthy();
+                    return reg;
+                }),
+                map(() => global_registry("abc", "world")
+                    .subscribe((n1) => {
+                        global_registry("abc")
+                            .subscribe((n2) => {
+                                expect(n1)
+                                    .toEqual(n2);
+                                done();
+                            })
+                    })
+                )
+            )
+            .subscribe();
     });
 
     it("enable features test", (done) => {
         enable_features({
-            hello: "world"
-        }).subscribe(data => {
-            expect(data.hello).toEqual("world");
-            done();
-        });
-
-        enable_features({
                 hello: "world"
-            }).flatMap(() => features_enabled("hello"))
+            })
             .subscribe(data => {
-                expect(data).toBeTruthy();
+                expect(data.hello)
+                    .toEqual("world");
+                done();
             });
 
         enable_features({
                 hello: "world"
-            }).flatMap(() => features_enabled("hello", "not_exists"))
+            })
+            .flatMap(() => features_enabled("hello"))
             .subscribe(data => {
-                expect(data).toBeFalsy();
+                expect(data)
+                    .toBeTruthy();
+            });
+
+        enable_features({
+                hello: "world"
+            })
+            .flatMap(() => features_enabled("hello", "not_exists"))
+            .subscribe(data => {
+                expect(data)
+                    .toBeFalsy();
             });
     });
 });

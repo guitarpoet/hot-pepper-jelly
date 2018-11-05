@@ -81,7 +81,6 @@ describe("context filter test", () => {
         }
 
         process_object(new NodeModuleLoader(module))(a).subscribe(a => {
-            console.info(a);
         });
     })
 });

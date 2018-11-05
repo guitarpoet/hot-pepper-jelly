@@ -13,6 +13,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 __export(require("./src/node/Watcher"));
 __export(require("./src/node/NodeResourceResolver"));
 __export(require("./src/node/NodeModuleResolver"));
+__export(require("./src/node/NodeModuleLoader"));
 // Let's add some short cuts
 require("rxjs/add/operator/map");
 require("rxjs/add/operator/concatMap");

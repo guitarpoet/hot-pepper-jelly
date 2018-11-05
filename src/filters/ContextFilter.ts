@@ -222,7 +222,6 @@ const processObject = (data:any, loader:AbstractModuleLoader):Observable<any> =>
     let observables:Array<Observable<any>> = [];
     let loadRequest = Observable.of(data);
     if(isObject(data)) {
-
         // This is an object, let's process its fields first
         for(let p in data) {
             let v = data[p];

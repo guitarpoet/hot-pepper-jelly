@@ -9,6 +9,7 @@
 export * from "./src/node/Watcher";
 export * from "./src/node/NodeResourceResolver";
 export * from "./src/node/NodeModuleResolver";
+export * from "./src/node/NodeModuleLoader"
 
 import { Observable } from "rxjs/Observable"
 // Let's add some short cuts

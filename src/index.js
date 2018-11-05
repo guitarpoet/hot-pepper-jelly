@@ -7,24 +7,38 @@
  * @date-1.0 Mon Feb 12 15:56:33 2018
  */
 
-const { safeGet, propGet, getFileContentsSync, getFileContents, isNode } = require("./functions");
-const path = isNode()? require("path"): {};
-const fs = isNode()? require("fs"): {};
-const { keys, isDate, isNumber, isFunction, extend, isString, isArray, isSymbol } = require("lodash");
+const {
+    getFileContentsSync,
+    getFileContents,
+    isNode
+} = require("./functions");
+const path = isNode() ? require("path") : {};
+const fs = isNode() ? require("fs") : {};
+const {
+    keys,
+    isDate,
+    isNumber,
+    isFunction,
+    extend,
+    isString,
+    isArray,
+    isSymbol
+} = require("lodash");
 const handlebars = require("handlebars");
 const Watcher = require("./watcher");
-const Module = typeof module != "undefined"? module.constructor: {};
+const Module = typeof module != "undefined" ? module.constructor : {};
 const MODULE_PROXY_PATTERNS_KEY = "module_proxy_patterns";
 const MODULE_PROXY_EXCLUDE_PATTERNS_KEY = "module_proxy_exclude_patterns";
 
 const TRACE_REGEX = /^at ([<>._a-zA-Z]+) \(([^:]+):([0-9]+):([0-9]+)\)$/;
+const get = require("lodash/get");
 
 handlebars.registerHelper("json", (context) => {
     return JSON.stringify(context);
 });
 
 const updateNodePath = (paths = []) => {
-    if(!isNode()) {
+    if (!isNode()) {
         // We'll return empty string since we are not in the NodeJS environment
         return false;
     }
@@ -35,12 +49,12 @@ const updateNodePath = (paths = []) => {
     // Let's get the path of this
     let pwd = path.resolve(path.join(__dirname, ".."));
 
-    if(isArray(paths)) {
+    if (isArray(paths)) {
         // Add midori's path anyway
         paths.push(`${pwd}/node_modules/@guitarpoet/midori`);
     }
 
-    if(p) {
+    if (p) {
         p = `${pwd}:${pwd}/node_modules:` + paths.join(":");
     } else {
         p = `${pwd}:${pwd}/node_modules:` + process.env.NODE_PATH + ":";
@@ -49,7 +63,7 @@ const updateNodePath = (paths = []) => {
 
     // Let's update nodejs's path
     process.env.NODE_PATH = p;
-    if(typeof Module !== "undefined") {
+    if (typeof Module !== "undefined") {
         // Update the require if in NodeJS
         Module._initPaths();
     }
@@ -61,7 +75,7 @@ const errput = (err) => {
 }
 
 const appendIfNotExists = (i, arr) => {
-    if(isArray(arr) && arr.indexOf(i) === -1) {
+    if (isArray(arr) && arr.indexOf(i) === -1) {
         arr.push(i);
         return arr;
     }
@@ -72,7 +86,7 @@ const appendIfNotExists = (i, arr) => {
  * Resolve the templates
  */
 const resolveTemplate = (template) => {
-    if(!isNode()) {
+    if (!isNode()) {
         // We only support the template resolve function in the NodeJS, if not in NodeJS, we just use the template string instead
         return template;
     }
@@ -80,11 +94,11 @@ const resolveTemplate = (template) => {
     // The template paths registry, will store all template paths we have resolved
     let templatePathReg = registry("template_paths");
 
-    if(feature_enabled("template_file")) {
+    if (feature_enabled("template_file")) {
         // Check if the template path registry is already there and valid
         let p = templatePathReg.get(template);
-        if(p) {
-            if(fs.existsSync(p)) {
+        if (p) {
+            if (fs.existsSync(p)) {
                 // This is the file, and it exists, let's get the contents of it
                 return getFileContentsSync(p);
             } else {
@@ -101,24 +115,25 @@ const resolveTemplate = (template) => {
         appendIfNotExists(path.join(process.cwd(), "templates"), templatePath);
         appendIfNotExists(path.join(process.cwd(), "node_modules"), templatePath);
 
-        if(feature_enabled("node_template_file")) {
+        if (feature_enabled("node_template_file")) {
             // If search the template file in node path is enabled
             let nodePath = process.env.NODE_PATH || "";
             // Add each node path into the template paths
-            nodePath.split(path.delimiter).map(p => appendIfNotExists(p, templatePath));
+            nodePath.split(path.delimiter)
+                .map(p => appendIfNotExists(p, templatePath));
         }
 
         let extension = global_registry("template_ext") || ".hbs";
         let fileName = template;
         // Then, let's resolve the template file
-        if(!fileName.endsWith(extension)) {
+        if (!fileName.endsWith(extension)) {
             // Let's add the file extension automaticly
             fileName = fileName + extension;
         }
 
-        for(let p of templatePath) {
+        for (let p of templatePath) {
             let filePath = path.join(p, fileName);
-            if(fs.existsSync(filePath)) {
+            if (fs.existsSync(filePath)) {
                 // Found, let's put the path of it into the registry
                 templatePathReg.set(template, filePath);
                 // Let's get the contents of it
@@ -134,8 +149,8 @@ const resolveTemplate = (template) => {
 }
 
 const template = (template, context = {}, cache = true) => {
-    let t = cache? handlebarTemplate(template): null;
-    if(!t) {
+    let t = cache ? handlebarTemplate(template) : null;
+    if (!t) {
         // Let's resolve and compile the template
         t = handlebars.compile(resolveTemplate(template));
 
@@ -146,12 +161,14 @@ const template = (template, context = {}, cache = true) => {
 }
 
 const getCaller = () => {
-    let { stack } = new Error();
+    let {
+        stack
+    } = new Error();
     stack = stack.split("\n");
 
-    if(stack.length > 1) {
+    if (stack.length > 1) {
         let caller = parseTrace(stack[3]);
-        if(caller.file == __filename) {
+        if (caller.file == __filename) {
             // We are calling from ourselves
             caller = parseTrace(stack[4]);
         }
@@ -161,36 +178,44 @@ const getCaller = () => {
 }
 
 const parseTrace = (msg) => {
-    if(msg) {
-        let data = msg.trim().match(TRACE_REGEX);
-        if(data) {
+    if (msg) {
+        let data = msg.trim()
+            .match(TRACE_REGEX);
+        if (data) {
             let func = data[1];
             let file = data[2];
             let line = data[3];
             let col = data[4];
-            return { func, file, line, col };
+            return {
+                func,
+                file,
+                line,
+                col
+            };
         }
     }
     return null;
 }
 
 const log = (msg, context = {}, level = "INFO", tag = null, sink = "default") => {
-    let { stack } = new Error();
+    let {
+        stack
+    } = new Error();
     stack = stack.split("\n");
 
-    let theSink = safeGet(global_registry("sinks"), sink, console.log);
+    let theSink = get(global_registry("sinks"), sink, console.log);
 
     let data = parseTrace(stack[2]);
-    if(data) {
-        if(data.func == "debug") {
+    if (data) {
+        if (data.func == "debug") {
             // This is the debug function, let's use next level
             data = parseTrace(stack[3]);
         }
-        if(data) {
+        if (data) {
             data.level = level;
 
             let prefix = template("[{{func}}]:{{line}} - ", data);
-            if(tag) {
+            if (tag) {
                 theSink(prefix + template(msg, context), level, tag);
             } else {
                 theSink(prefix + template(msg, context), level);
@@ -227,11 +252,12 @@ class Registry {
     }
 
     isExpired() {
-        return this.expiredDate && this.expiredDate.getTime() <= new Date().getTime();
+        return this.expiredDate && this.expiredDate.getTime() <= new Date()
+            .getTime();
     }
 
     get() {
-        if(this.isExpired()) {
+        if (this.isExpired()) {
             return null;
         }
         return this.value;
@@ -252,8 +278,8 @@ class RegistryRepository {
      * Get the registry, and create it if not found
      */
     getRegistry(name, create = true) {
-        let r = safeGet(this._registries, name);
-        if(!r && create) {
+        let r = get(this._registries, name);
+        if (!r && create) {
             r = new Registry(name, null, this);
             this._registries[name] = r;
         }
@@ -261,12 +287,14 @@ class RegistryRepository {
     }
 
     set(name, value) {
-        return this.getRegistry(name).update(value);
+        return this.getRegistry(name)
+            .update(value);
     }
 
     get(name, defaultValue = null) {
-        let v = this.getRegistry(name).get();
-        if(v) {
+        let v = this.getRegistry(name)
+            .get();
+        if (v) {
             return v;
         }
         return defaultValue;
@@ -291,7 +319,7 @@ const _global = new RegistryRepository();
 
 const registry = (name) => {
     let r = _global.get(name);
-    if(!r) {
+    if (!r) {
         r = new RegistryRepository();
         _global.set(name, r);
     }
@@ -299,9 +327,9 @@ const registry = (name) => {
 }
 
 const handlebarTemplate = (name, value = null) => {
-    if(name) {
+    if (name) {
         let r = registry("templates");
-        if(value) {
+        if (value) {
             // Setter
             r.set(name, value);
         } else {
@@ -313,9 +341,9 @@ const handlebarTemplate = (name, value = null) => {
 }
 
 const cache = (name, value = null) => {
-    if(name) {
+    if (name) {
         let r = registry("cache");
-        if(value) {
+        if (value) {
             // Setter
             r.set(name, value);
         } else {
@@ -327,9 +355,9 @@ const cache = (name, value = null) => {
 }
 
 const proxy = (path, value = null) => {
-    if(path) {
+    if (path) {
         let r = registry("proxies");
-        if(value) {
+        if (value) {
             // Setter
             r.set(path, value);
         } else {
@@ -341,13 +369,13 @@ const proxy = (path, value = null) => {
 }
 
 const loaded = (path, value = null, caller = null) => {
-    if(!feature_enabled("hotload")) {
+    if (!feature_enabled("hotload")) {
         // If the hotload feature is not enabled, let's just try find it in nodejs's cache
         return searchCacheSync(path);
     }
     let r = registry("modules");
-    if(path) {
-        if(value) {
+    if (path) {
+        if (value) {
             // Setter
             r.set(path, value);
         } else {
@@ -364,7 +392,7 @@ const _reload = (path, caller = null) => {
     // The absolute path of this required module
     let realPath = resolvePath(path, caller);
 
-    if(!realPath) {
+    if (!realPath) {
         return false;
     }
     // Since we want to reload, let's purge the load cache first
@@ -399,62 +427,62 @@ class ProxyHandler {
     getObj() {
         let obj = loaded(this.path);
         // Return the object if we don't support the property, but if we do have the property, we should return the property of this object instead
-        return this.prop? obj[this.prop]: obj;
+        return this.prop ? obj[this.prop] : obj;
     }
 
     getPrototypeOf(target) {
         let obj = this.getObj();
-        if(obj) {
+        if (obj) {
             return Object.getPrototypeOf(obj);
         }
         return null;
     }
 
-    setPrototypeOf (target, prototype) {
+    setPrototypeOf(target, prototype) {
         let obj = this.getObj();
-        if(obj) {
+        if (obj) {
             Object.setPrototypeOf(obj, prototype);
         }
     }
 
     isExtensible(target) {
         let obj = this.getObj();
-        if(obj) {
+        if (obj) {
             return Object.isExtensible(obj);
         }
     }
 
     preventExtensions(target) {
         let obj = this.getObj();
-        if(obj) {
+        if (obj) {
             return Object.preventExtensions(obj);
         }
     }
 
     getOwnPropertyDescriptor(target, prop) {
         let obj = this.getObj();
-        if(obj) {
+        if (obj) {
             return Object.getOwnPropertyDescriptor(obj, prop);
         }
     }
 
     defineProperty(target, prop, descriptor) {
         let obj = this.getObj();
-        if(obj) {
+        if (obj) {
             return Object.defineProperty(obj, prop, descriptor);
         }
     }
 
     has(target, prop) {
         let obj = this.getObj();
-        if(obj) {
+        if (obj) {
             return prop in obj;
         }
     }
 
     get(target, prop, receiver) {
         let obj = this.getObj();
-        if(obj && prop) {
+        if (obj && prop) {
             if (prop === "__proto__") {
                 return obj.prototype;
             }
@@ -462,16 +490,16 @@ class ProxyHandler {
             if (prop === "constructor") {
                 return obj;
             }
-            let ret = safeGet(obj, prop);
-            if(!this.prop) {
-                if(!ret || isDate(ret) || isString(ret) || isNumber(ret) || isSymbol(prop)) {
+            let ret = get(obj, prop);
+            if (!this.prop) {
+                if (!ret || isDate(ret) || isString(ret) || isNumber(ret) || isSymbol(prop)) {
                     // We don't need to proxy string and numbers and dates, and the symbol properties
                     return ret;
                 }
                 // If this is the root proxy, let's check if we do have the second proxy
                 let p = "__proxy__" + prop;
-                let tmp = safeGet(obj, p);
-                if(!tmp) {
+                let tmp = get(obj, p);
+                if (!tmp) {
                     // We don't have the second proxy, let's create it
                     tmp = new Proxy(ret, new ProxyHandler(this.path, prop));
                     // Set the second proxy into the object
@@ -487,9 +515,9 @@ class ProxyHandler {
 
     set(target, property, value, receiver) {
         let obj = this.getObj();
-        if(obj) {
+        if (obj) {
             obj[property] = value;
-            if(!this.prop) {
+            if (!this.prop) {
                 // If this is the root object, remove the second level proxy of this property, to refresh it.
                 delete obj["__proxy__" + property];
             }
@@ -499,9 +527,9 @@ class ProxyHandler {
 
     apply(target, thisArg, argumentsList) {
         let obj = this.getObj();
-        if(obj) {
+        if (obj) {
             debug(`Trying to call the proxied function in module ${this.path}`);
-            if(thisArg) {
+            if (thisArg) {
                 return obj.apply(thisArg, argumentsList);
             } else {
                 return obj.apply(obj, argumentsList);
@@ -510,17 +538,18 @@ class ProxyHandler {
         return null;
     }
 
-    deleteProperty(target, property){
+    deleteProperty(target, property) {
         let obj = this.getObj();
-        if(obj) {
+        if (obj) {
             delete obj[property];
         }
     }
 
-    ownKeys (target)  {
+    ownKeys(target) {
         let obj = this.getObj();
-        if(obj) {
-            let ret = keys(obj).filter((name) => !name.match(/__proxy__.*/));
+        if (obj) {
+            let ret = keys(obj)
+                .filter((name) => !name.match(/__proxy__.*/));
             // Add prototype since this is a proxy
             ret.push("prototype");
             return ret;
@@ -530,35 +559,36 @@ class ProxyHandler {
 
     getPrototype() {
         let self = this;
-        if(!this._proto) {
-            this._proto = new Proxy(this.getObj().prototype, {
-                get (target, prop, receiver) {
-                    if (prop === "constructor") {
-                        return target;
+        if (!this._proto) {
+            this._proto = new Proxy(this.getObj()
+                .prototype, {
+                    get(target, prop, receiver) {
+                        if (prop === "constructor") {
+                            return target;
+                        }
+
+                        if (prop === "__proto__") {
+                            return target.prototype;
+                        }
+
+                        // Let's check the property is in the object first
+                        if (prop in target) {
+                            return target[prop];
+                        }
+
+                        let obj = self.getObj();
+
+                        return get(obj, prop);
                     }
-
-                    if (prop === "__proto__") {
-                        return target.prototype;
-                    }
-
-                    // Let's check the property is in the object first
-                    if(prop in target) {
-                        return target[prop];
-                    }
-
-                    let obj = self.getObj();
-
-                    return safeGet(obj, prop);
-                }
-            });
+                });
         }
         return this._proto;
     }
 
-    construct (target, argumentsList, newTarget) {
+    construct(target, argumentsList, newTarget) {
         let obj = this.getObj();
         let self = this;
-        if(obj) {
+        if (obj) {
             let ret = new obj(...argumentsList);
             return new Proxy(ret, {
                 get(target, prop, receiver) {
@@ -573,11 +603,11 @@ class ProxyHandler {
                     }
 
                     // Let's check the property is in the object first
-                    if(prop in obj.prototype) {
+                    if (prop in obj.prototype) {
                         return obj.prototype[prop];
                     }
 
-                    return safeGet(target, prop);
+                    return get(target, prop);
                 }
             });
             // Update the prototype of the return object to be this
@@ -600,11 +630,12 @@ const purgeCache = (moduleName) => {
 
     // Remove cached paths to the module.
     // Thanks to @bentael for pointing this out.
-    Object.keys(module.constructor._pathCache).map((cacheKey) => {
-        if (cacheKey.indexOf(moduleName) > 0) {
-            delete module.constructor._pathCache[cacheKey];
-        }
-    });
+    Object.keys(module.constructor._pathCache)
+        .map((cacheKey) => {
+            if (cacheKey.indexOf(moduleName) > 0) {
+                delete module.constructor._pathCache[cacheKey];
+            }
+        });
 };
 
 /**
@@ -643,15 +674,14 @@ const resolvePath = (p, caller = null) => {
     // Let's try the path first
     try {
         let ret = require.resolve(p);
-        if(ret) {
+        if (ret) {
             return ret;
         }
-    }
-    catch(ex) {
+    } catch (ex) {
         // We can't resolve it, let's check if the caller exists
-        if(caller && isString(caller)) {
+        if (caller && isString(caller)) {
             let ret = require.resolve(path.join(path.dirname(caller), p));
-            if(ret) {
+            if (ret) {
                 return ret;
             }
         }
@@ -664,20 +694,23 @@ const resolvePath = (p, caller = null) => {
  */
 const load = (path, reload = false, resolver = null) => {
     let realPath = false;
-    if(resolver && isFunction(resolver)) {
+    if (resolver && isFunction(resolver)) {
         realPath = resolver(path);
     } else {
-        let caller = getCaller().file;
+        let caller = getCaller()
+            .file;
         debug(`Trying to load module at path ${path} for caller ${caller}`);
 
         realPath = resolvePath(path, caller);
     }
-    if(!realPath) {
-        debug("Can't find path to load {{path}}", {path});
+    if (!realPath) {
+        debug("Can't find path to load {{path}}", {
+            path
+        });
         return false;
     }
 
-    if(!feature_enabled("hotload")) {
+    if (!feature_enabled("hotload")) {
         // If we don't ahve the hotload feature enabled, let's just require it
         return require(realPath);
     }
@@ -685,7 +718,7 @@ const load = (path, reload = false, resolver = null) => {
 
     let l = proxy(realPath);
 
-    if(l && !reload) {
+    if (l && !reload) {
         return l;
     }
     return _reload(realPath);
@@ -697,7 +730,7 @@ const reload = (path) => {
 
 const watcher = () => {
     let w = global_registry("watcher");
-    if(!w) {
+    if (!w) {
         w = new Watcher();
         global_registry("watcher", w);
     }
@@ -708,22 +741,22 @@ const start_watch = (files = [], callback = null, async = true) => {
     // Make this function run in background thread
     let f = () => {
         let w = watcher();
-        if(!w.watching()) {
+        if (!w.watching()) {
             w.watch(files, callback);
         }
     };
-    async? setTimeout(f, 0): f();
+    async ? setTimeout(f, 0): f();
 }
 
 const end_watch = () => {
     let w = watcher();
-    if(w.watching()) {
+    if (w.watching()) {
         w.endWatch();
     }
 }
 
 const global_registry = (name, value = null) => {
-    if(value) {
+    if (value) {
         return _global.set(name, value);
     } else {
         return _global.get(name);
@@ -732,12 +765,14 @@ const global_registry = (name, value = null) => {
 
 const watch_and_reload = (files = [], callback = null, async = true) => {
     start_watch(files, (file_path, type) => {
-        if(file_path.match(/.js$/) || file_path.match(/.json$/)) {
+        if (file_path.match(/.js$/) || file_path.match(/.json$/)) {
             // Only check for js and json
-            debug("Reloading file {{file_path}}", {file_path});
+            debug("Reloading file {{file_path}}", {
+                file_path
+            });
             // Reload the sample anytime any file is changed
             let m = _reload(file_path);
-            if(callback && isFunction(callback)) {
+            if (callback && isFunction(callback)) {
                 callback(m, file_path, type);
             }
         }
@@ -748,7 +783,7 @@ const watch_and_reload = (files = [], callback = null, async = true) => {
  * Enable the features using the hash
  */
 const enable_features = (features = {}) => {
-    if(features.hotload && !Module._orig_load) {
+    if (features.hotload && !Module._orig_load) {
         // We need enable the hot load hooks if we indeed wants hotload
         hookModuleRequire();
     }
@@ -773,18 +808,20 @@ const feature_enabled = (feature) => {
  * Enable the hot load into the global features
  */
 const enable_hotload = () => {
-    enable_features({hotload: true});
+    enable_features({
+        hotload: true
+    });
 }
 
 const proxy_patterns = (patterns = null) => {
-    if(patterns) {
+    if (patterns) {
         global_registry(MODULE_PROXY_PATTERNS_KEY, patterns);
     }
     return global_registry(MODULE_PROXY_PATTERNS_KEY);
 }
 
 const proxy_exclude_patterns = (patterns = null) => {
-    if(patterns) {
+    if (patterns) {
         global_registry(MODULE_PROXY_EXCLUDE_PATTERNS_KEY, patterns);
     }
     return global_registry(MODULE_PROXY_EXCLUDE_PATTERNS_KEY);
@@ -796,7 +833,9 @@ const proxy_exclude_patterns = (patterns = null) => {
  * @api 1.0
  */
 const hookModuleRequire = () => {
-    let { _load } = Module;
+    let {
+        _load
+    } = Module;
     // Let's save the original _load function to another slot
     Module._orig_load = _load;
     // Then, replace it with our own
@@ -804,16 +843,17 @@ const hookModuleRequire = () => {
         let realPath = Module._resolveFilename(request, parent, isMain);
         let proxyPatterns = global_registry(MODULE_PROXY_PATTERNS_KEY) || [];
         let obj = _load(request, parent, isMain);
-        if(proxyPatterns && isArray(proxyPatterns) && proxyPatterns.length > 0) {
-            if(proxyPatterns.filter(p => realPath.match(p)).length == 0) {
+        if (proxyPatterns && isArray(proxyPatterns) && proxyPatterns.length > 0) {
+            if (proxyPatterns.filter(p => realPath.match(p))
+                .length == 0) {
                 // The path didn't match any pattern, let's just return the object
                 return obj;
             }
         }
         let excludeProxyPatterns = global_registry(MODULE_PROXY_EXCLUDE_PATTERNS_KEY) || [];
-        if(excludeProxyPatterns && isArray(excludeProxyPatterns)) {
-            for(let p of excludeProxyPatterns) {
-                if(realPath.match(p)) {
+        if (excludeProxyPatterns && isArray(excludeProxyPatterns)) {
+            for (let p of excludeProxyPatterns) {
+                if (realPath.match(p)) {
                     // This is the exclude pattern, let's return the object instead of proxy it
                     return obj;
                 }
@@ -840,20 +880,21 @@ class MyPromise extends Promise {
  * The syntax sugar to make the chain easier
  */
 const chain = (callback = null) => {
-    let ret = function() {
+    let ret = function () {
         let args = Array.from(arguments);
 
         // The callback is an array
-        if(isArray(callback)) {
-            if(!callback.length) {
+        if (isArray(callback)) {
+            if (!callback.length) {
                 // If there is no callback in the chain, just resolve the args
                 return new Promise((resolve, reject) => resolve.apply(null, args));
             }
             let c = callback.shift();
             // Start the chain
-            let cc = chain(c).apply(null, args);
+            let cc = chain(c)
+                .apply(null, args);
 
-            while(callback.length) {
+            while (callback.length) {
                 c = callback.shift();
                 cc = cc.then(chain(c));
             }
@@ -861,9 +902,9 @@ const chain = (callback = null) => {
         }
 
         return new MyPromise((resolve, reject) => {
-            if(isFunction(callback)) {
+            if (isFunction(callback)) {
                 let result = callback.apply(null, args);
-                if(result instanceof Promise) {
+                if (result instanceof Promise) {
                     // If the callback returns a promise, let's call the promise
                     return result.then(resolve);
                 } else {
@@ -875,7 +916,7 @@ const chain = (callback = null) => {
         });
     }
 
-    if(isFunction(callback) || isArray(callback)) {
+    if (isFunction(callback) || isArray(callback)) {
         return ret;
     } else {
         // Let's treat chain as a starter
@@ -886,13 +927,13 @@ const chain = (callback = null) => {
 const getModule = (request, options = {}) => {
     // Let's get to the top most module
     let m = module;
-    while(m.parent) {
+    while (m.parent) {
         m = m.parent;
     }
 
-    if(m && request) {
+    if (m && request) {
         let path = Module._resolveFilename(request, m, false, options);
-        if(path) {
+        if (path) {
             return Module._cache[path]
         }
     }
@@ -901,14 +942,40 @@ const getModule = (request, options = {}) => {
 
 function pipe(obj) {
     let args = Array.from(arguments);
-    return function() {
-        return chain(Array.from(arguments)).apply(null, args);
+    return function () {
+        return chain(Array.from(arguments))
+            .apply(null, args);
     }
 }
 
 module.exports = {
-    cache, loaded, reload, load, debug, log, registry, watcher, start_watch, end_watch, isNode,
-    global_registry, watch_and_reload, getCaller, resolvePath, enable_hotload, enable_features, template,
-    enabled_features, feature_enabled, chain, handlebarTemplate, pipe, updateNodePath,
-    proxy_patterns, proxy_exclude_patterns, MODULE_PROXY_PATTERNS_KEY, MODULE_PROXY_EXCLUDE_PATTERNS_KEY, getModule
+    cache,
+    loaded,
+    reload,
+    load,
+    debug,
+    log,
+    registry,
+    watcher,
+    start_watch,
+    end_watch,
+    isNode,
+    global_registry,
+    watch_and_reload,
+    getCaller,
+    resolvePath,
+    enable_hotload,
+    enable_features,
+    template,
+    enabled_features,
+    feature_enabled,
+    chain,
+    handlebarTemplate,
+    pipe,
+    updateNodePath,
+    proxy_patterns,
+    proxy_exclude_patterns,
+    MODULE_PROXY_PATTERNS_KEY,
+    MODULE_PROXY_EXCLUDE_PATTERNS_KEY,
+    getModule
 }

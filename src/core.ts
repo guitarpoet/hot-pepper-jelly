@@ -111,6 +111,16 @@ export const enable_features = (features: any = {}): Observable<any> => {
     );
 }
 
+/**
+ * Append the element to the array if it is not exists in the array
+ */
+export const appendIfNotExists = (i: any, arr: Array<any>): Array<any> => {
+    if (isArray(arr) && arr.indexOf(i) === -1) {
+        arr.push(i);
+    }
+    return arr;
+}
+
 export const template = (template: string, context: any = {}): Observable<string> => {
     let getTemplate = template_registry(template).pipe(filter(r => !!r));
     let setTemplate = defer(() => {
@@ -169,4 +179,22 @@ export const paths = (obj: any): Array<string> => {
         }
     }
     return ret;
+}
+
+/**
+ * Store the object into cache or retrieve it
+ * TODO: Add local service(say mongo) support
+ */
+export const cache = (name: string, value: any = null): Observable<any> => {
+    // Let's get the cache registry first
+    return registry("cache").pipe(
+        flatMap((r: Repository) => {
+            if (value) {
+                return r.set(name, value).pipe(
+                    flatMap(() => r.get(name))
+                );
+            }
+            return r.get(name);
+        })
+    );
 }

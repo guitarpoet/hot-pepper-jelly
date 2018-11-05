@@ -28,16 +28,6 @@ const isNode = () => {
 const fs = isNode() ? require("fs") : {};
 const path = isNode() ? require("path") : {};
 
-/**
- * @deprecated This is deprecated in version 1.1, will be removed in the future version, use lodash's get instead
- */
-const safeGet = get;
-
-/**
- * @deprecated This is deprecated in version 1.1, will be removed in the future version, use lodash's get instead
- */
-const propGet = get;
-
 const getFileContents = (path) => {
     return new Promise((resolve, reject) => {
         if (!isNode()) {
@@ -76,8 +66,6 @@ const getFileContentsSync = (path) => {
 
 
 module.exports = {
-    safeGet,
-    propGet,
     getFileContentsSync,
     getFileContents,
     isNode

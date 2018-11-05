@@ -79,6 +79,15 @@ exports.enabled_features = () => {
 exports.enable_features = (features = {}) => {
     return exports.enabled_features().pipe(operators_1.flatMap(orig => exports.global_registry("features", lodash_1.extend(features, orig))));
 };
+/**
+ * Append the element to the array if it is not exists in the array
+ */
+exports.appendIfNotExists = (i, arr) => {
+    if (lodash_1.isArray(arr) && arr.indexOf(i) === -1) {
+        arr.push(i);
+    }
+    return arr;
+};
 exports.template = (template, context = {}) => {
     let getTemplate = exports.template_registry(template).pipe(operators_1.filter(r => !!r));
     let setTemplate = rxjs_1.defer(() => {
@@ -130,5 +139,17 @@ exports.paths = (obj) => {
         }
     }
     return ret;
+};
+/**
+ * Store the object into cache or retrive it
+ */
+exports.cache = (name, value = null) => {
+    // Let's get the cache registry first
+    return exports.registry("cache").pipe(operators_1.flatMap((r) => {
+        if (value) {
+            return r.set(name, value).pipe(operators_1.flatMap(() => r.get(name)));
+        }
+        return r.get(name);
+    }));
 };
 //# sourceMappingURL=core.js.map

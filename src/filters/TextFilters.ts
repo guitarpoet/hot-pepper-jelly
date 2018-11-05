@@ -11,6 +11,7 @@ import { flatMap } from "rxjs/operators";
 
 import { ResourceResolver, RESULT_TYPE_TXT } from "../interfaces";
 import { flatten, isArray, isString } from "lodash";
+import { enable_features } from "../../core";
 
 const INCLUDE_PATTERN: RegExp = /^[ \t]*#include ([a-zA-Z0-9\\._\/]+)/;
 const IF_STATE: string = "if";
@@ -23,7 +24,7 @@ const END_IF_PATTERN: RegExp = /^([ \t])*#endif$/;
 const DEFINE_PATTERN: RegExp = /^([ \t])*#define ([a-z\\.A-Z_]+)( (.+))?/;
 const UNDEFINE_PATTERN: RegExp = /^([ \t])*#undefine ([a-z\\.A-Z_]+)/;
 const EXPR_PATTERN: RegExp = /^([ \t])*#expr (.+)$/;
-//const ENABLE_PATTERN:RegExp = /^([ \t])*#enable (([a-z\\.A-Z_]+)([ \t]*,[ \t]*[a-z\\.A-Z_]+)*)$/;
+const ENABLE_PATTERN:RegExp = /^([ \t])*#enable (([a-z\\.A-Z_]+)([ \t]*,[ \t]*[a-z\\.A-Z_]+)*)$/;
 
 // Let's define the evluate function
 export const evaluate = (expr) => (eval(`(${expr})`))
@@ -81,6 +82,15 @@ export const handleDefine = (t: string): Block | string => {
         }
     }
 
+    m = t.match(ENABLE_PATTERN);
+    if(m) {
+        // This is the enable block
+        let features: string = m[2];
+        if(features) {
+            return new EnableBlock(features);
+        }
+    }
+
     m = t.match(EXPR_PATTERN);
     if (m) {
         // This is the expression block
@@ -129,6 +139,25 @@ class UndefineBlock extends Block {
             typeof process.env[this.variable] !== "undefined") {
             delete process.env[this.variable];
         }
+    }
+}
+
+class EnableBlock extends Block {
+    private features: string;
+
+    constructor(features: string) {
+        super();
+        this.features = features;
+    }
+
+    process(): any {
+        // This will return blank, but will enable the features
+        const features: any = {};
+        for(const f of this.features.split(",")) {
+            features[f.trim()] = true;
+        }
+        enable_features(features).subscribe();
+        return false;
     }
 }
 

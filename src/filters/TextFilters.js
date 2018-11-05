@@ -11,6 +11,7 @@ const rxjs_1 = require("rxjs");
 const operators_1 = require("rxjs/operators");
 const interfaces_1 = require("../interfaces");
 const lodash_1 = require("lodash");
+const core_1 = require("../../core");
 const INCLUDE_PATTERN = /^[ \t]*#include ([a-zA-Z0-9\\._\/]+)/;
 const IF_STATE = "if";
 const ELSE_STATE = "else";
@@ -22,7 +23,7 @@ const END_IF_PATTERN = /^([ \t])*#endif$/;
 const DEFINE_PATTERN = /^([ \t])*#define ([a-z\\.A-Z_]+)( (.+))?/;
 const UNDEFINE_PATTERN = /^([ \t])*#undefine ([a-z\\.A-Z_]+)/;
 const EXPR_PATTERN = /^([ \t])*#expr (.+)$/;
-//const ENABLE_PATTERN:RegExp = /^([ \t])*#enable (([a-z\\.A-Z_]+)([ \t]*,[ \t]*[a-z\\.A-Z_]+)*)$/;
+const ENABLE_PATTERN = /^([ \t])*#enable (([a-z\\.A-Z_]+)([ \t]*,[ \t]*[a-z\\.A-Z_]+)*)$/;
 // Let's define the evluate function
 exports.evaluate = (expr) => (eval(`(${expr})`));
 /**
@@ -76,6 +77,14 @@ exports.handleDefine = (t) => {
             return new DefineBlock(name, value);
         }
     }
+    m = t.match(ENABLE_PATTERN);
+    if (m) {
+        // This is the enable block
+        let features = m[2];
+        if (features) {
+            return new EnableBlock(features);
+        }
+    }
     m = t.match(EXPR_PATTERN);
     if (m) {
         // This is the expression block
@@ -114,6 +123,21 @@ class UndefineBlock extends Block {
             typeof process.env[this.variable] !== "undefined") {
             delete process.env[this.variable];
         }
+    }
+}
+class EnableBlock extends Block {
+    constructor(features) {
+        super();
+        this.features = features;
+    }
+    process() {
+        // This will return blank, but will enable the features
+        const features = {};
+        for (const f of this.features.split(",")) {
+            features[f.trim()] = true;
+        }
+        core_1.enable_features(features).subscribe();
+        return false;
     }
 }
 class ExprBlock extends Block {

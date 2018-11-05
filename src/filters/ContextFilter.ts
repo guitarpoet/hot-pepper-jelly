@@ -119,8 +119,8 @@ const overlay = (dest: any, src: any): any => {
     return src ? src : dest;
 }
 
-const processAlias = (aliases: any, data): any => {
-    if (data.$aliases) {
+const processAlias = (aliases: any, data: any): any => {
+    if (data && data.$aliases) {
         // If there is the aliases in the data, then use it as the base
         aliases = extend(aliases || {}, data);
     }

@@ -4,4 +4,5 @@
 #define b 2
 #else
 #define b 3
+#enable IMPOSSIBLE
 #endif

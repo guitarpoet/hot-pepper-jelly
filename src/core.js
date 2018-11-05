@@ -141,7 +141,8 @@ exports.paths = (obj) => {
     return ret;
 };
 /**
- * Store the object into cache or retrive it
+ * Store the object into cache or retrieve it
+ * TODO: Add local service(say mongo) support
  */
 exports.cache = (name, value = null) => {
     // Let's get the cache registry first

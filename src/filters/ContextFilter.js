@@ -100,7 +100,7 @@ const overlay = (dest, src) => {
     return src ? src : dest;
 };
 const processAlias = (aliases, data) => {
-    if (data.$aliases) {
+    if (data && data.$aliases) {
         // If there is the aliases in the data, then use it as the base
         aliases = lodash_1.extend(aliases || {}, data);
     }

@@ -12,6 +12,7 @@ import { map, reduce, filter, flatMap } from "rxjs/operators";
 import { template, tryFirst } from "../core";
 import { isObject, isArray, isFunction, isString, extend, get } from "lodash";
 import { AbstractModuleLoader } from "../ModuleLoader";
+import { dirname } from "path";
 
 const ALIAS_PATTERN = /^\~([a-zA-Z_\-]+)/;
 const COMPOSITE_PATTERN = /^\^([a-zA-Z_\-\/]+)/;
@@ -45,7 +46,11 @@ export const context = (file: string, resolver: ResourceResolver, base: any = {}
                     if (theContext) {
                         // We only handle when context exists
                         if (contents.match(PLACE_HOLDER_PATTERN)) {
-                            return theContext.pipe(map(c => extend(c, { path })), flatMap(c => template(contents, c)));
+                            let dir: string = "";
+                            if(path) {
+                                dir = dirname(path);
+                            }
+                            return theContext.pipe(map(c => extend(c, { path, dir })), flatMap(c => template(contents, c)));
                         }
                     }
                     return of(contents);

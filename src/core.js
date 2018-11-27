@@ -11,7 +11,7 @@ const lodash_1 = require("lodash");
  */
 function tryFirst(...obs) {
     return rxjs_1.concat.apply(null, obs)
-        .pipe(operators_1.first(), operators_1.map((n) => n));
+        .pipe(operators_1.filter((n) => n !== null && typeof n !== "undefined"), operators_1.first(), operators_1.map((n) => n));
 }
 exports.tryFirst = tryFirst;
 /**

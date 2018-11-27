@@ -20,7 +20,7 @@ import { extend, isObject, isArray } from "lodash";
  */
 export function tryFirst<T>(...obs: Array<Observable<T>>): Observable<T> {
     return concat.apply(null, obs)
-        .pipe(first(), map((n: any) => n as T));
+        .pipe(filter((n: any) => n !== null && typeof n !== "undefined"), first(), map((n: any) => n as T));
 }
 
 /**

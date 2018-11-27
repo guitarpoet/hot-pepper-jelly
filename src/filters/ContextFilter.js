@@ -12,6 +12,7 @@ const rxjs_1 = require("rxjs");
 const operators_1 = require("rxjs/operators");
 const core_1 = require("../core");
 const lodash_1 = require("lodash");
+const path_1 = require("path");
 const ALIAS_PATTERN = /^\~([a-zA-Z_\-]+)/;
 const COMPOSITE_PATTERN = /^\^([a-zA-Z_\-\/]+)/;
 /**
@@ -41,7 +42,11 @@ exports.context = (file, resolver, base = {}) => {
                 if (theContext) {
                     // We only handle when context exists
                     if (contents.match(PLACE_HOLDER_PATTERN)) {
-                        return theContext.pipe(operators_1.map(c => lodash_1.extend(c, { path })), operators_1.flatMap(c => core_1.template(contents, c)));
+                        let dir = "";
+                        if (path) {
+                            dir = path_1.dirname(path);
+                        }
+                        return theContext.pipe(operators_1.map(c => lodash_1.extend(c, { path, dir })), operators_1.flatMap(c => core_1.template(contents, c)));
                     }
                 }
                 return rxjs_1.of(contents);

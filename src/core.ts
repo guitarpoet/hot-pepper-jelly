@@ -7,12 +7,64 @@
  */
 declare const window: any;
 
-import { defer, Observable, concat } from "rxjs"
+import { defer, Observable, concat, of, Subject } from "rxjs"
 import { first, filter, flatMap, map } from "rxjs/operators";
 import { Repository } from "./interfaces";
 import { SimpleRepository } from "./Repository";
 import * as tinyliquid from "tinyliquid";
 import { extend, isObject, isArray } from "lodash";
+
+/**
+ * This is the holder that will be used for advanced operations
+ */
+const $holder: any = {};
+
+/**
+ * This function will try to get the value in the holder or update it first then getting it
+ */
+export const holder = (name: string, value: any = null): Observable<any> => {
+    if (value) {
+        // Update the value of holder if needed
+        $holder[name] = value;
+    }
+    if ($holder[name] instanceof Observable) {
+        return $holder[name];
+    } else {
+        return defer(() => of($holder[name]));
+    }
+}
+
+/**
+ * This is the loading support for all streams, it will create a loader for each request, and reuse that loader, and then save the result in the holder so that after the loading, all request will just get from the holder
+ */
+export const loader = (name: string, obs: Observable<any>): Observable<any> => {
+    const loaderName = `{{${name}}}`;
+    if ($holder[name]) {
+        return of($holder[name]);
+    }
+    if (!$holder[loaderName]) {
+        // Let's create the loader now
+        const s: Subject = new Subject();
+        setTimeout(() => {
+            // Then, let's call the observable
+            obs.subscribe({
+                next(data) {
+                    // Put it into the holder
+                    $holder[name] = data;
+                    s.next(data);
+                },
+                error(e) {
+                    s.error(e);
+                },
+                complete() {
+                    s.complete();
+                }
+            })
+        }, 0);
+        $holder[loaderName] = s;
+    }
+    return $holder[loaderName];
+}
 
 /**
  * This function will try the observables one by one and only take the first one

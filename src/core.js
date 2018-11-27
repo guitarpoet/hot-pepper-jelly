@@ -6,6 +6,56 @@ const Repository_1 = require("./Repository");
 const tinyliquid = require("tinyliquid");
 const lodash_1 = require("lodash");
 /**
+ * This is the holder that will be used for advanced operations
+ */
+const $holder = {};
+/**
+ * This function will try to get the value in the holder or update it first then getting it
+ */
+exports.holder = (name, value = null) => {
+    if (value) {
+        // Update the value of holder if needed
+        $holder[name] = value;
+    }
+    if ($holder[name] instanceof rxjs_1.Observable) {
+        return $holder[name];
+    }
+    else {
+        return rxjs_1.defer(() => rxjs_1.of($holder[name]));
+    }
+};
+/**
+ * This is the loading support for all streams, it will create a loader for each request, and reuse that loader, and then save the result in the holder so that after the loading, all request will just get from the holder
+ */
+exports.loader = (name, obs) => {
+    const loaderName = `{{${name}}}`;
+    if ($holder[name]) {
+        return rxjs_1.of($holder[name]);
+    }
+    if (!$holder[loaderName]) {
+        // Let's create the loader now
+        const s = new rxjs_1.Subject();
+        setTimeout(() => {
+            // Then, let's call the observable
+            obs.subscribe({
+                next(data) {
+                    // Put it into the holder
+                    $holder[name] = data;
+                    s.next(data);
+                },
+                error(e) {
+                    s.error(e);
+                },
+                complete() {
+                    s.complete();
+                }
+            });
+        }, 0);
+        $holder[loaderName] = s;
+    }
+    return $holder[loaderName];
+};
+/**
  * This function will try the observables one by one and only take the first one
  * by the way
  */

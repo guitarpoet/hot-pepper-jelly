@@ -1,5 +1,7 @@
 const {
     isNode,
+    holder,
+    loader,
     print,
     registry,
     template,
@@ -8,6 +10,13 @@ const {
     features_enabled,
     enabled_features
 } = require("../src/core");
+
+const {
+    of,
+    forkJoin,
+    defer,
+} = require("rxjs");
+
 const {
     NodeResourceResolver
 } = require("../src/node/NodeResourceResolver");
@@ -40,7 +49,8 @@ const {
     map,
     flatMap,
     reduce,
-    concatMap
+    concatMap,
+    delay
 } = require("rxjs/operators");
 
 describe("core function test", () => {
@@ -140,6 +150,60 @@ describe("core function test", () => {
             .subscribe(data => {
                 expect(data)
                     .toBeFalsy();
+            });
+    });
+
+    it("holder", (done) => {
+        holder("name", "Jack")
+            .pipe(
+                flatMap(() => holder("name")),
+                map((name) => {
+                    expect(name)
+                        .toEqual("Jack");
+                }),
+                flatMap(() => holder("name", "Jim")),
+                map((name) => {
+                    expect(name)
+                        .toEqual("Jim");
+                })
+            )
+            .subscribe({
+                next() {
+                    done();
+                },
+                error(e) {
+                    done(e);
+                }
+            });
+    });
+
+    it("loader", (done) => {
+        const o = defer(() => Observable.create(obs => {
+            setTimeout(() => {
+                obs.next(new Date());
+                obs.complete();
+            }, 1);
+        }));
+
+        forkJoin(
+                of(1).pipe(delay(10), flatMap(() => loader("a", o))),
+                loader("a", o),
+                loader("a", o),
+                loader("a", o),
+                loader("a", o),
+            )
+            .subscribe({
+                next(data) {
+                    expect(data.length).toEqual(5);
+                    for(let i = 1; i < 5; i++) {
+                        expect(data[i]).toEqual(data[0]);
+                    }
+                    done();
+                },
+                error(e) {
+                    done(e);
+                    console.info(e);
+                }
             });
     });
 });

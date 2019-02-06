@@ -44,7 +44,7 @@ export const loader = (name: string, obs: Observable<any>): Observable<any> => {
     }
     if (!$holder[loaderName]) {
         // Let's create the loader now
-        const s: Subject = new Subject();
+        const s: Subject<any> = new Subject<any>();
         setTimeout(() => {
             // Then, let's call the observable
             obs.subscribe({
@@ -201,7 +201,10 @@ export const template = (template: string, context: any = {}): Observable<string
     );
 }
 
-export const print = (context: any = ""): any => (obj: any): string => (!console.info(context, obj) && obj as string)
+export const print = (context: any = ""): any => (obj: any): string => {
+    console.info(context, obj);
+    return obj as string;
+}
 
 export const tokenizePath = (path: string): Array<string> => {
     let paths = path.split(".");
